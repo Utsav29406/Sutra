@@ -48,5 +48,5 @@ invoice-preview.pdf
 *.tsbuildinfo
 next-env.d.ts
 
-# Claude Code settings, kept on this machine only
+# Local assistant notes, kept on this machine only
 CLAUDE.md
