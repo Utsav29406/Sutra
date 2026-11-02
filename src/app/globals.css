@@ -1,0 +1,2056 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Exact design tokens, recovered from the stylesheet the original build
+  ships (/_next/static/immutable/chunks/*.css). These are the real values,
+  not a recreation.
+
+  Written as space-separated RGB triplets rather than hex so Tailwind's
+  "color/opacity" modifiers (e.g. text-foreground/50, bg-primary/5) can
+  compose them as rgb(var(--color-x) / <alpha-value>) in tailwind.config.ts.
+*/
+/*
+  "Kajal" ground. The surface tokens are inverted to near-black so every page
+  inherits the dark treatment — only `body` sets a page background, so the
+  sections below it come along automatically. Gold is unchanged: it is the
+  brand's metal and what the backdrop's sparkles and mandalas are made of.
+*/
+:root {
+  --color-cream: 26 20 22; /* #1a1416 — Kajal */
+  --color-cream-dark: 38 29 31; /* #261d1f — raised surfaces */
+  --color-primary: 194 74 74; /* #c24a4a — maroon lifted to read on near-black */
+  --color-primary-dark: 127 29 29; /* #7f1d1d — the original maroon, for fills */
+  --color-accent: 184 134 11; /* #b8860b */
+  --color-accent-light: 212 175 55; /* #d4af37 */
+  --color-foreground: 245 238 232; /* #f5eee8 */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* transparent so the fixed SiteBackdrop shows through the whole scroll */
+body {
+  background-color: transparent;
+  color: rgb(var(--color-foreground));
+}
+
+/* Shimmer sweep used on primary CTA buttons across the live site */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 40%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+.btn-shimmer:hover::after {
+  transform: translateX(120%);
+}
+
+/* Shimmering eyebrow text on the hero */
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--color-accent-light)) 0%,
+    #fff 50%,
+    rgb(var(--color-accent-light)) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 3.5s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% center;
+  }
+}
+
+/* Animated underline thread that slides beneath whichever nav link is active/hovered */
+.sutra-navthread {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  height: 2px;
+  width: 0;
+  border-radius: 999px;
+  background: rgb(var(--color-accent));
+  opacity: 0;
+  transition: transform 0.35s ease, width 0.35s ease, opacity 0.2s ease;
+}
+.sutra-navthread.on {
+  opacity: 0.7;
+}
+
+/* Navbar buttons. "Sign in" is a pill edged in the same gold as the thread
+   under the menu links; once signed in it becomes a soft gold "My account"
+   pill. With something in it, the bag is a soft maroon pill with its count. */
+.sutra-goldpill {
+  --pill-fill: rgb(var(--color-cream));
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 15px 0 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgb(var(--color-accent-light));
+  background:
+    linear-gradient(var(--pill-fill), var(--pill-fill)) padding-box,
+    linear-gradient(120deg, #8a6508, rgb(var(--color-accent-light)) 40%, #f3dc8a 50%, rgb(var(--color-accent-light)) 60%, #8a6508) border-box;
+  transition: box-shadow 0.3s ease, color 0.3s ease;
+}
+.sutra-goldpill svg {
+  color: rgb(var(--color-accent-light));
+}
+.sutra-goldpill:hover,
+.sutra-goldpill:focus-visible {
+  color: #f3dc8a;
+  box-shadow: 0 0 0 4px rgb(var(--color-accent-light) / 0.1), 0 6px 18px -6px rgb(var(--color-accent-light) / 0.45);
+}
+.sutra-acct {
+  --pill-fill: #30271a; /* gold at 12% over the page */
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px 0 12px;
+  border: 1px solid rgb(var(--color-accent-light) / 0.6);
+  border-radius: 999px;
+  background: var(--pill-fill);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  color: rgb(var(--color-accent-light));
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+.sutra-acct svg {
+  color: rgb(var(--color-accent-light));
+}
+.sutra-acct:hover,
+.sutra-acct:focus-visible {
+  --pill-fill: #3b301e;
+  color: #f3dc8a;
+  box-shadow: 0 0 0 4px rgb(var(--color-accent-light) / 0.08);
+}
+/* While nobody is using them, the account pills breathe: the gold glow swells
+   and fades, and now and then the person icon nods hello. They settle while
+   pointed at or focused, and stay still for reduced motion. */
+.sutra-goldpill,
+.sutra-acct {
+  animation: sutra-breathe 3.2s ease-in-out infinite;
+}
+.sutra-goldpill svg,
+.sutra-acct svg {
+  transform-origin: 50% 90%;
+  animation: sutra-nod 3.2s ease-in-out infinite;
+}
+.sutra-goldpill:hover,
+.sutra-goldpill:focus-visible,
+.sutra-acct:hover,
+.sutra-acct:focus-visible,
+.sutra-goldpill:hover svg,
+.sutra-goldpill:focus-visible svg,
+.sutra-acct:hover svg,
+.sutra-acct:focus-visible svg {
+  animation: none;
+}
+@keyframes sutra-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--color-accent-light) / 0);
+  }
+  50% {
+    box-shadow: 0 0 16px 1px rgb(var(--color-accent-light) / 0.35);
+  }
+}
+@keyframes sutra-nod {
+  0%,
+  70%,
+  100% {
+    transform: none;
+  }
+  78% {
+    transform: rotate(-12deg);
+  }
+  86% {
+    transform: rotate(9deg);
+  }
+  93% {
+    transform: rotate(-4deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-goldpill,
+  .sutra-acct,
+  .sutra-goldpill svg,
+  .sutra-acct svg {
+    animation: none;
+  }
+}
+/* The Collections panel under the navbar's "Shop" link (CollectionsMenu). */
+.sutra-collections {
+  background: radial-gradient(70% 140% at 85% 0%, #2c1f1a 0%, #1d1517 55%);
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.95);
+}
+.sutra-collections::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--color-accent-light) / 0.65) 30%, #f3dc8a 50%, rgb(var(--color-accent-light) / 0.65) 70%, transparent);
+}
+.sutra-collections-cat,
+.sutra-collections-feature {
+  position: relative;
+  display: block;
+  height: 292px;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.9);
+}
+.sutra-collections-cat::after,
+.sutra-collections-feature::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(12, 8, 9, 0.9));
+}
+.sutra-collections-cat::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(var(--color-accent-light) / 0);
+  transition: box-shadow 0.3s ease;
+}
+.sutra-collections-cat:hover::before,
+.sutra-collections-cat:focus-visible::before {
+  box-shadow: inset 0 0 0 1px rgb(var(--color-accent-light) / 0.7);
+}
+.sutra-collections-feature {
+  border: 1px solid rgb(var(--color-accent-light) / 0.35);
+}
+.sutra-collections-fade {
+  animation: sutra-collections-fade 0.35s ease;
+}
+@keyframes sutra-collections-fade {
+  from {
+    opacity: 0;
+  }
+}
+.sutra-collections-link {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  white-space: nowrap;
+  color: rgb(var(--color-foreground) / 0.86);
+}
+.sutra-collections-link span {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: 20px;
+  line-height: 1.15;
+  transition: color 0.2s ease;
+}
+.sutra-collections-link i {
+  width: 0;
+  overflow: hidden;
+  font-size: 9px;
+  font-style: normal;
+  color: rgb(var(--color-accent-light));
+  transition: width 0.2s ease;
+}
+.sutra-collections-link small {
+  margin-left: auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--color-foreground) / 0.4);
+}
+.sutra-collections-link:hover span,
+.sutra-collections-link[data-hot] span,
+.sutra-collections-link:focus-visible span {
+  color: rgb(var(--color-accent-light));
+}
+.sutra-collections-link:hover i,
+.sutra-collections-link[data-hot] i,
+.sutra-collections-link:focus-visible i {
+  width: 12px;
+}
+.sutra-collections-note::before {
+  content: "✦";
+  margin-right: 8px;
+  font-size: 8px;
+  vertical-align: 2px;
+  color: rgb(var(--color-accent));
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-collections-fade {
+    animation: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .sutra-bagpill {
+    gap: 7px;
+    height: 32px;
+    padding: 0 7px 0 11px;
+    border: 1px solid rgb(var(--color-primary) / 0.35);
+    background: rgb(var(--color-primary) / 0.14);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .sutra-bagpill:hover {
+    background: rgb(var(--color-primary) / 0.24);
+  }
+  .sutra-bagpill b {
+    border-radius: 999px;
+    padding: 1px 7px;
+    background: rgb(var(--color-primary));
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+  }
+}
+
+/* The navbar search's thread: the same gold line as under the active menu
+   link, drawn in from the centre while the search is in use. */
+.sutra-searchthread {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -5px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(var(--color-accent));
+  opacity: 0;
+  transform: scaleX(0);
+  transition: transform 0.35s ease, opacity 0.2s ease;
+  pointer-events: none;
+}
+.sutra-search[data-active] .sutra-searchthread,
+.sutra-search:focus-within .sutra-searchthread {
+  opacity: 0.7;
+  transform: scaleX(1);
+}
+
+/* Search options sliding in one after another; only new rows animate. */
+.sutra-optin {
+  animation: sutra-optin 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+@keyframes sutra-optin {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-optin {
+    animation: none;
+  }
+}
+
+/* Ripple spawned by Press.tsx on any .btn-shimmer / [data-press] element */
+.sutra-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%) scale(0);
+  background: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  animation: sutra-ripple-out 0.6s ease-out;
+}
+@keyframes sutra-ripple-out {
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Slim scrollbar for the cart drawer's item list */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+}
+
+.sutra-underline {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.sutra-logo-size {
+  font-size: 22px;
+}
+
+/* Knot mark stroke-draw animation used next to the "sutRa" logo.
+   Both strands carry pathLength="100", so the dash values below are
+   percentages of each arc regardless of its real length. The second
+   strand trails the first — a thread pulled through, not two at once. */
+.sutra-strand {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  /* the 0.45s lead-in lets the page finish its first paint before the first
+     pass — without it the draw competes with everything else appearing */
+  animation: sutra-draw-loop 7s linear 0.45s infinite both;
+}
+.sutra-strand:nth-child(2) {
+  animation-delay: 0.8s;
+}
+
+/*
+  One continuous cycle rather than a draw that snaps back: the dash keeps
+  travelling in the same direction, so the strand is *pulled through* and off
+  the far end instead of rewinding. Offset 100 and offset -100 both render as
+  nothing, which is what makes the wrap invisible.
+
+  Weighted to sit complete for most of the cycle — a logo that is half-drawn
+  more often than whole stops reading as a logo. Per-keyframe timing functions
+  ease each leg independently; the shorthand's `linear` is only the fallback.
+*/
+@keyframes sutra-draw-loop {
+  0% {
+    stroke-dashoffset: 100;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1);
+  }
+  18% {
+    stroke-dashoffset: 0;
+    animation-timing-function: linear;
+  }
+  72% {
+    stroke-dashoffset: 0;
+    animation-timing-function: cubic-bezier(0.7, 0, 0.45, 1);
+  }
+  90% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* a looping animation is exactly what this setting exists to stop —
+     leave the mark drawn and still */
+  .sutra-strand {
+    animation: none;
+  }
+}
+
+/*
+  "Thread draw", the sign-in card's entrance (AuthFrame entrance="thread"). The
+  knot's strands draw themselves, a gold thread traces the outer frame and then
+  the inner one, and only then does the card fill in behind it. Plays once, on
+  mount: turning between sign in and create account does not replay it.
+
+  The traced rects sit on the frame's edge at 100% size, so their 1px stroke
+  lands half a pixel off the real border. They fade out as the real border
+  fades in, so that half pixel never shows.
+*/
+.sutra-knot-draw path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: sutra-thread-draw 0.75s cubic-bezier(0.55, 0, 0.3, 1) forwards;
+}
+.sutra-knot-draw path + path {
+  animation-delay: 0.22s;
+}
+.sutra-trace {
+  animation: sutra-thread-fade 0.5s ease 1.4s forwards;
+}
+.sutra-trace rect {
+  fill: none;
+  stroke: rgb(var(--color-accent-light));
+  stroke-width: 1;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: sutra-thread-draw 1s cubic-bezier(0.55, 0, 0.3, 1) 0.2s forwards;
+}
+.sutra-trace-inner rect {
+  stroke-opacity: 0.6;
+  animation-delay: 0.4s;
+}
+.sutra-thread-frame {
+  animation: sutra-thread-fill 0.8s ease 0.45s both;
+}
+.sutra-thread-inner {
+  animation: sutra-thread-line 0.5s ease 1.2s both;
+}
+@keyframes sutra-thread-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes sutra-thread-fade {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sutra-thread-fill {
+  from {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+@keyframes sutra-thread-line {
+  from {
+    border-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-knot-draw path,
+  .sutra-thread-frame,
+  .sutra-thread-inner {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .sutra-trace {
+    display: none;
+  }
+}
+
+/*
+  The gold pool in SiteBackdrop. The blur lives on the container so the three
+  blooms inside melt into a single body of light rather than three shapes.
+
+  Every keyframe below repeats translate(-50%, -50%) on the container: it is
+  centred by its own transform, and a keyframe that set only scale would drop
+  the centring and snap the pool to the top-left corner.
+*/
+.sutra-glow {
+  width: 32rem;
+  height: 32rem;
+  filter: blur(52px);
+  transform: translate(-50%, -50%);
+  animation: sutra-glow-drift 46s ease-in-out infinite;
+}
+.sutra-bloom {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  will-change: transform;
+}
+/* long axis vertical, turning one way */
+.sutra-bloom-a {
+  background: radial-gradient(
+    ellipse 50% 100% at 50% 50%,
+    rgb(var(--color-accent-light) / 0.17),
+    transparent 62%
+  );
+  animation: sutra-bloom-a 38s linear infinite;
+}
+/* long axis horizontal, turning the other — the crossing is what morphs */
+.sutra-bloom-b {
+  background: radial-gradient(
+    ellipse 100% 44% at 50% 50%,
+    rgb(var(--color-accent) / 0.15),
+    transparent 60%
+  );
+  animation: sutra-bloom-b 53s linear infinite;
+}
+/* a small bright core that only breathes, so the centre never goes flat */
+.sutra-bloom-c {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(var(--color-accent-light) / 0.13),
+    transparent 52%
+  );
+  animation: sutra-bloom-c 19s ease-in-out infinite;
+}
+
+@keyframes sutra-glow-drift {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  33% {
+    transform: translate(-40%, -58%) scale(1.08);
+  }
+  66% {
+    transform: translate(-58%, -44%) scale(0.96);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes sutra-bloom-a {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.12);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+@keyframes sutra-bloom-b {
+  from {
+    transform: rotate(360deg) scale(1.06);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.9);
+  }
+  to {
+    transform: rotate(0deg) scale(1.06);
+  }
+}
+@keyframes sutra-bloom-c {
+  0%,
+  100% {
+    transform: scale(0.88);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-glow {
+    animation: none;
+    transform: translate(-50%, -50%);
+  }
+  .sutra-bloom {
+    animation: none;
+  }
+}
+
+/* Sutra Help expanding out of its launcher button */
+@keyframes sutra-expand {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+::selection {
+  background: rgb(var(--color-accent-light));
+  color: rgb(var(--color-primary));
+}
+
+/*
+  Form fields, site-wide.
+
+  A bare <input> keeps the browser's white background while inheriting the
+  page's near-white foreground, so typed text was invisible anywhere a field
+  did not set its own colours — checkout, reviews, order feedback, search and
+  the admin tabs all did this. The auth screens only escaped it because
+  authInputClass sets a background explicitly.
+
+  Styling the elements rather than patching each className fixes every form at
+  once and stops the next new field from reintroducing it.
+*/
+/*
+  The type guards sit inside :where() so these stay *defaults* rather than
+  overrides. :where() contributes no specificity, which keeps each selector at
+  (0,0,1) — a plain element — so any Tailwind background utility beats it.
+
+  Without that, the guards scored (0,3,1) against .bg-transparent's (0,1,0) and
+  won: fields that deliberately opt out, because a styled wrapper already draws
+  the surface, were painted anyway. The navbar search pill showed it plainly —
+  a square-cornered 4% block inside a rounded-full pill, stacking to ~8%.
+*/
+input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"])),
+textarea,
+select {
+  background-color: rgb(255 255 255 / 0.04);
+  color: rgb(var(--color-foreground));
+}
+
+/* Also wrapped, so focus does not sneak back above a utility and reintroduce
+   the same problem the moment the field is used. Equal specificity to the rule
+   above, so it still wins while focused on source order alone. */
+input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus),
+textarea:where(:focus),
+select:where(:focus) {
+  background-color: rgb(255 255 255 / 0.07);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgb(var(--color-foreground) / 0.4);
+}
+
+/* Native dropdown lists render on the OS surface, not the page. */
+select option {
+  background-color: rgb(var(--color-cream-dark));
+  color: rgb(var(--color-foreground));
+}
+
+/*
+  Chrome paints its own near-white background over autofilled fields, which
+  brings the invisible-text problem back on exactly the forms people autofill.
+  The colour cannot be overridden directly, so an inset shadow covers it and
+  text-fill-color carries the glyph colour.
+*/
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: rgb(var(--color-foreground));
+  -webkit-box-shadow: 0 0 0 1000px rgb(38 29 31) inset;
+  caret-color: rgb(var(--color-foreground));
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* The date/number spinners and search cancel button are dark-on-dark otherwise. */
+input[type="search"]::-webkit-search-cancel-button {
+  filter: invert(1);
+  opacity: 0.5;
+}
+
+/* Festival banner: warm glow, and mirror work (abhla) - small gold-rimmed
+   discs as stitched on a chaniya choli - fading in from the left. */
+.sutra-festival {
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgb(var(--color-primary) / 0.38), transparent 55%),
+    radial-gradient(90% 120% at 100% 100%, rgb(var(--color-accent) / 0.22), transparent 60%),
+    #1f1417;
+}
+.sutra-festival::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.16) 0 2.5px, rgb(var(--color-accent-light) / 0.55) 2.5px 3.6px, transparent 4px),
+    radial-gradient(circle, rgb(var(--color-accent-light) / 0.35) 0 1.2px, transparent 1.6px);
+  background-size: 34px 34px, 34px 34px;
+  background-position: 0 0, 17px 17px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000 75%);
+  mask-image: linear-gradient(90deg, transparent 30%, #000 75%);
+}
+.sutra-pennant {
+  display: block;
+  width: 12px;
+  height: 12px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  opacity: 0.85;
+}
+
+/*
+  Opening intro (IntroSplash), the first page of a visit only. The knot draws
+  itself, "sutRa" rises letter by letter over a gold thread, then the logo
+  flies into the header (aimed by the component through --intro-dx/dy/k) as
+  the dark screen fades and the page fades in. All times are from first paint:
+
+    0.15s / 0.45s  sparks circle        2.08s  thread, tagline, hint fade
+    0.76s          letters rise         2.20s  logo flies to the header
+    1.15s          gold thread runs     2.42s  screen fades out
+    1.45s          tagline              3.10s  gone
+
+  Without scripts the logo fades in place instead of flying, and the whole
+  layer still ends itself (visibility: hidden) on time.
+
+  During Diwali a flame opens into the knot instead (0.1s to 1.05s) and the
+  letters rise from 0.95s.
+
+  Everything that moves here is transform or opacity, so it runs on the
+  compositor and keeps time while a phone is busy starting the page (a stroke
+  dash or letter-spacing animation froze there, then jumped). The page under
+  the screen skips rendering for its first second, so the screen paints sooner.
+*/
+.sutra-intro {
+  display: none;
+}
+html.sutra-intro-on .sutra-intro {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  cursor: pointer;
+  animation: sutra-intro-end 1ms linear 3.1s forwards;
+}
+.sutra-intro.is-skipping {
+  animation: sutra-intro-out 0.25s ease forwards;
+}
+.sutra-intro-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(55% 40% at 50% 50%, rgb(var(--color-primary) / 0.16), transparent 75%),
+    rgb(var(--color-cream));
+  animation: sutra-intro-out 0.62s ease-out 2.42s forwards;
+}
+.sutra-intro-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.sutra-intro-logo {
+  position: relative;
+  font-size: 66px;
+  line-height: 1;
+  color: rgb(var(--color-foreground));
+  white-space: nowrap;
+  transform-origin: 0 0;
+  animation: sutra-intro-fly 0.78s cubic-bezier(0.65, 0, 0.25, 1) 2.2s both;
+}
+/*
+  The knot (IntroKnot). Every day: a gold spark runs once round each strand
+  (the strand's start to its end, 335°) and the strand glows up behind it.
+  During Diwali (html.sutra-intro-diwali): a diya flame lights in the middle,
+  flares, and the knot opens out of it; the letters wait for it.
+*/
+.sutra-intro-strand {
+  position: absolute;
+  inset: 0;
+}
+.sutra-intro-strand svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sutra-intro-strand.is-first {
+  transform-origin: 37% 50%;
+  animation: sutra-intro-glow 0.78s cubic-bezier(0.55, 0, 0.3, 1) 0.15s both;
+}
+.sutra-intro-strand.is-second {
+  transform-origin: 63% 50%;
+  animation: sutra-intro-glow 0.78s cubic-bezier(0.55, 0, 0.3, 1) 0.45s both;
+}
+/* Turns about its strand's centre (box: 46 units wide, the strand's diameter),
+   carrying the spark on its rim. */
+.sutra-intro-spark {
+  position: absolute;
+  top: 27%;
+  width: 46%;
+  height: 46%;
+  animation:
+    sutra-intro-orbit 0.78s cubic-bezier(0.55, 0, 0.3, 1) var(--d) both,
+    sutra-intro-out 0.2s ease calc(var(--d) + 0.7s) forwards;
+}
+.sutra-intro-spark.is-first {
+  --from: 47deg;
+  --d: 0.15s;
+  left: 14%;
+}
+.sutra-intro-spark.is-second {
+  --from: 227deg;
+  --d: 0.45s;
+  left: 40%;
+}
+.sutra-intro-spark::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 0.26em;
+  height: 0.26em;
+  margin: -0.13em 0 0 -0.13em;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe6, rgb(var(--color-accent-light)) 55%, rgb(var(--color-accent-light) / 0) 72%);
+  box-shadow: 0 0 0.29em 0.07em rgb(var(--color-accent-light) / 0.55);
+}
+.sutra-intro-flame {
+  display: none;
+}
+html.sutra-intro-diwali .sutra-intro-spark {
+  display: none;
+}
+html.sutra-intro-diwali .sutra-intro-flame {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.43em;
+  height: 0.71em;
+  margin: -0.43em 0 0 -0.215em;
+  border-radius: 50% 50% 46% 46% / 64% 64% 36% 36%;
+  background: radial-gradient(circle at 50% 72%, #fff6d2, #ffc04d 45%, #f28c1b 85%);
+  box-shadow: 0 0 0.52em 0.14em rgb(242 140 27 / 0.45);
+  transform-origin: 50% 100%;
+  animation: sutra-intro-lamp 0.95s ease-in-out 0.1s both;
+}
+html.sutra-intro-diwali .sutra-intro-strand {
+  transform-origin: 50% 50%;
+}
+html.sutra-intro-diwali .sutra-intro-strand.is-first {
+  animation: sutra-intro-open-l 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.68s both;
+}
+html.sutra-intro-diwali .sutra-intro-strand.is-second {
+  animation: sutra-intro-open-r 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.74s both;
+}
+html.sutra-intro-diwali .sutra-intro-letter {
+  animation-delay: calc(0.95s + var(--i) * 0.075s);
+}
+@keyframes sutra-intro-glow {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  60% {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes sutra-intro-orbit {
+  from {
+    transform: rotate(var(--from));
+  }
+  to {
+    transform: rotate(calc(var(--from) + 335deg));
+  }
+}
+@keyframes sutra-intro-lamp {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  55% {
+    transform: scale(0.94, 1.06);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+@keyframes sutra-intro-open-l {
+  from {
+    opacity: 0;
+    transform: translateX(13%) scale(0.15) rotate(-120deg);
+  }
+  30% {
+    opacity: 1;
+  }
+}
+@keyframes sutra-intro-open-r {
+  from {
+    opacity: 0;
+    transform: translateX(-13%) scale(0.15) rotate(120deg);
+  }
+  30% {
+    opacity: 1;
+  }
+}
+.sutra-intro-letter {
+  display: inline-block;
+  animation: sutra-intro-rise 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.76s + var(--i) * 0.075s);
+}
+.sutra-intro-thread {
+  width: 320px;
+  height: 1px;
+  margin-top: 30px;
+  background: linear-gradient(90deg, transparent, rgb(var(--color-accent-light)) 15%, rgb(var(--color-accent-light)) 85%, transparent);
+  transform-origin: 0 50%;
+  animation:
+    sutra-intro-run 0.65s cubic-bezier(0.55, 0, 0.3, 1) 1.15s both,
+    sutra-intro-out 0.25s ease 2.08s forwards;
+}
+/* The tagline closes up from wider spacing: each letter (--o places it from
+   the middle) slides in by the spacing it loses, 0.6em down to 0.4em here. */
+.sutra-intro-tag {
+  --spread: 0.2em;
+  margin-top: 26px;
+  font-size: 13px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgb(var(--color-foreground) / 0.7);
+  animation:
+    sutra-intro-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.45s both,
+    sutra-intro-out 0.25s ease 2.08s forwards;
+}
+.sutra-intro-tag span {
+  display: inline-block;
+  white-space: pre;
+  animation: sutra-intro-gather 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.45s both;
+}
+.sutra-intro-skip {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(6% + env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(var(--color-foreground) / 0.35);
+  animation:
+    sutra-intro-in 0.4s ease 0.4s both,
+    sutra-intro-out 0.25s ease 2.08s forwards;
+}
+/* The header logo waits for the flying one to land; the page rises in under the fade. */
+html.sutra-intro-on .sutra-header .sutra-logo {
+  animation: sutra-intro-in 1ms linear 2.98s both;
+}
+html.sutra-intro-on main {
+  animation:
+    sutra-intro-defer 1s,
+    sutra-intro-page 0.65s cubic-bezier(0.22, 1, 0.36, 1) 2.56s backwards;
+}
+html.sutra-intro-on footer {
+  animation: sutra-intro-defer 1s;
+}
+@media (max-width: 767.98px) {
+  .sutra-intro-logo {
+    font-size: 42px;
+  }
+  .sutra-intro-thread {
+    width: 200px;
+    margin-top: 22px;
+  }
+  .sutra-intro-tag {
+    --spread: 0.26em;
+    margin-top: 20px;
+    font-size: 11px;
+    letter-spacing: 0.34em;
+  }
+  .sutra-intro-skip {
+    font-size: 10px;
+  }
+}
+@keyframes sutra-intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+}
+@keyframes sutra-intro-run {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes sutra-intro-gather {
+  from {
+    transform: translateX(calc(var(--o) * var(--spread)));
+  }
+}
+/* Skips laying out the page while the screen covers it; a browser that can't
+   animate content-visibility simply renders it as before. */
+@keyframes sutra-intro-defer {
+  from,
+  to {
+    content-visibility: hidden;
+  }
+}
+@keyframes sutra-intro-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sutra-intro-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* --intro-hold is 1 when the flight is aimed: the logo stays solid all the way
+   and hands over to the header logo on landing. Unaimed, it fades in place. */
+@keyframes sutra-intro-fly {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+  99% {
+    transform: translate(var(--intro-dx, 0px), var(--intro-dy, 0px)) scale(var(--intro-k, 1));
+    opacity: var(--intro-hold, 0);
+  }
+  to {
+    transform: translate(var(--intro-dx, 0px), var(--intro-dy, 0px)) scale(var(--intro-k, 1));
+    opacity: 0;
+  }
+}
+/* Opacity only: a transform on <main> would carry the phone's fixed buy and
+   checkout bars along with it. */
+@keyframes sutra-intro-page {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sutra-intro-end {
+  to {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/*
+  Diwali opening (IntroDiwali): the background behind the intro logo while
+  html.sutra-intro-diwali is set (INTRO_GATE, dates in FESTIVALS). It lives in
+  .sutra-intro-bg, so it fades with the screen at 2.42s:
+
+    0.10s  diyas light, middle outwards  0.70s / 1.15s / 1.60s  fireworks
+    0.30s+ embers rise from the diyas
+
+  No toran here, by request: the home page wears one under the header.
+*/
+.sutra-dw {
+  display: none;
+}
+html.sutra-intro-diwali .sutra-dw {
+  display: block;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* Night sky, deeper at the top, lamp-light warming the floor. */
+.sutra-dw-sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90% 38% at 50% 104%, rgb(242 140 27 / 0.26), transparent 70%),
+    radial-gradient(70% 50% at 50% -10%, rgb(70 20 40 / 0.55), transparent 70%);
+}
+/* The toran's hanging strands (DiwaliDecor's Swag), on the home page and phones. */
+.sutra-dw-strand {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: sutra-dw-sway 1.6s ease-in-out 0.6s infinite alternate;
+}
+.sutra-dw-diyas {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(6% + 34px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(14px, 4vw, 54px);
+}
+.sutra-dw-diya {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 52px;
+}
+.sutra-dw-diya svg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sutra-dw-halo {
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 190 80 / 0.42), rgb(242 140 27 / 0.12) 55%, transparent);
+  animation:
+    sutra-intro-in 0.5s ease var(--d) both,
+    sutra-dw-pulse 1.1s ease-in-out calc(var(--d) + 0.5s) infinite alternate;
+}
+.sutra-dw-light {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sutra-dw-ignite 0.45s cubic-bezier(0.34, 1.5, 0.6, 1) var(--d) both;
+}
+.sutra-dw-flick {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sutra-dw-flicker 0.32s ease-in-out calc(var(--d) * -1) infinite alternate;
+}
+.sutra-dw-ember {
+  position: absolute;
+  left: var(--x);
+  bottom: calc(6% + 60px);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: #ffd36b;
+  box-shadow: 0 0 6px 1px rgb(255 190 80 / 0.8);
+  animation: sutra-dw-rise var(--t) cubic-bezier(0.3, 0.6, 0.6, 1) var(--d) both;
+}
+.sutra-dw-burst {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 0;
+  height: 0;
+}
+.sutra-dw-burst i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: var(--len);
+  transform: rotate(var(--a));
+  transform-origin: 1px 0;
+}
+.sutra-dw-burst i::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, transparent, var(--c));
+  animation: sutra-dw-ray 1s cubic-bezier(0.16, 0.8, 0.3, 1) var(--d) both;
+}
+.sutra-dw-burst b {
+  position: absolute;
+  left: -40px;
+  top: -40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c), transparent);
+  animation: sutra-dw-flash 0.6s ease-out var(--d) both;
+}
+@media (max-width: 767.98px) {
+  .sutra-dw-diya {
+    width: 38px;
+    height: 38px;
+  }
+  .sutra-dw-halo {
+    width: 90px;
+    height: 90px;
+    margin: -45px 0 0 -45px;
+  }
+  .sutra-dw-diya:nth-child(-n + 2),
+  .sutra-dw-diya:nth-child(n + 8) {
+    display: none;
+  }
+  .sutra-dw-burst {
+    scale: 0.7;
+  }
+}
+@keyframes sutra-dw-sway {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(4deg);
+  }
+}
+@keyframes sutra-dw-ignite {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+@keyframes sutra-dw-flicker {
+  from {
+    transform: scale(0.94, 1) skewX(-2deg);
+  }
+  to {
+    transform: scale(1.04, 1.08) skewX(2deg);
+  }
+}
+@keyframes sutra-dw-pulse {
+  to {
+    opacity: 0.7;
+    transform: scale(0.92);
+  }
+}
+@keyframes sutra-dw-rise {
+  from {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  15% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--drift), -52vh);
+  }
+}
+@keyframes sutra-dw-ray {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scaleY(0.3);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(var(--len) * 0.9)) scaleY(0.6);
+  }
+}
+@keyframes sutra-dw-flash {
+  from {
+    opacity: 0.55;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/*
+  Diwali theme (components/DiwaliDecor.tsx). Everything themed is in the HTML
+  all year; it shows only while <html data-fest-theme="DIWALI"> is set
+  (lib/festival-theme, from the festival's themeFrom day until its offer ends).
+  [data-diwali] shows in the theme, [data-diwali-off] is the everyday version it
+  replaces, and [data-diwali-before] / [data-diwali-during] pick the line for
+  before or during the offer (data-festival, from FESTIVAL_GATE).
+
+  Hide-only rules, so nothing loses its own display (flex, grid, contents).
+*/
+html:not([data-fest-theme="DIWALI"]) [data-diwali],
+html[data-fest-theme="DIWALI"] [data-diwali-off],
+html[data-festival="DIWALI"] [data-diwali-before],
+html:not([data-festival="DIWALI"]) [data-diwali-during] {
+  display: none !important;
+}
+/* Held still while the opening plays over them, so they don't compete with
+   the logo's animation; they start once the opening is gone. */
+html.sutra-intro-on .sutra-dw-hero *,
+html.sutra-intro-on .sutra-dw-hero *::before,
+html.sutra-intro-on .sutra-fest-embers i {
+  animation-play-state: paused;
+}
+
+/* Hero */
+.sutra-dw-hero {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sutra-fest-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(40% 60% at 76% 30%, rgb(242 140 27 / 0.18), transparent 70%),
+    radial-gradient(80% 30% at 50% 100%, rgb(242 140 27 / 0.2), transparent 70%);
+}
+.sutra-fest-toran {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  height: 78px;
+}
+.sutra-fest-toran svg {
+  flex: none;
+  width: 150px;
+  height: 84px;
+  overflow: visible;
+}
+html[data-fest-theme="DIWALI"] .sutra-hero-em {
+  color: #ffd36b;
+  text-shadow: 0 0 28px rgb(242 140 27 / 0.45);
+}
+html[data-fest-theme="DIWALI"] .sutra-hero-copy {
+  padding-bottom: 72px;
+}
+.sutra-fest-cta {
+  background: linear-gradient(180deg, #ffd36b, #f28c1b);
+  color: #3b1408;
+  box-shadow: 0 6px 24px rgb(242 140 27 / 0.35);
+}
+.sutra-fest-cta:hover {
+  filter: brightness(1.06);
+}
+.sutra-fest-heroicon {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+/* Akash kandils, across the hero's right side, clear of the copy. */
+.sutra-fest-lantern {
+  position: absolute;
+  top: 30px;
+  left: calc(max(50%, 640px) + (100% - max(50%, 640px) - 80px) * var(--f));
+  width: calc(60px * var(--k));
+  transform-origin: 50% 0;
+  animation: sutra-dw-sway 3.2s ease-in-out var(--dl) infinite alternate;
+}
+.sutra-fest-cord {
+  display: block;
+  width: 1px;
+  height: var(--h);
+  margin-inline: auto;
+  background: linear-gradient(rgb(212 175 55 / 0.2), rgb(212 175 55 / 0.8));
+}
+.sutra-fest-lantern svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.sutra-fest-lglow {
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  width: 220%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 180 70 / 0.35), transparent);
+  animation: sutra-fest-dim 1.8s ease-in-out infinite alternate;
+}
+
+/* Fireworks: a trail rises, the burst opens and fades, every 5.4s. */
+.sutra-fest-burst {
+  position: absolute;
+  left: calc(max(50%, 640px) + (100% - max(50%, 640px) - 40px) * var(--f));
+  top: var(--y);
+  width: 0;
+  height: 0;
+}
+.sutra-fest-burst em {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 2px;
+  height: 46px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--c), transparent);
+  opacity: 0;
+  animation: sutra-fest-trail 5.4s ease-out var(--d) infinite;
+}
+.sutra-fest-burst b {
+  position: absolute;
+  left: -40px;
+  top: -40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c), transparent);
+  opacity: 0;
+  animation: sutra-fest-flash 5.4s ease-out var(--d) infinite;
+}
+.sutra-fest-burst i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: var(--len);
+  transform: rotate(var(--a));
+  transform-origin: 1px 0;
+}
+.sutra-fest-burst i::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, transparent, var(--c));
+  opacity: 0;
+  animation: sutra-fest-ray 5.4s cubic-bezier(0.16, 0.8, 0.3, 1) var(--d) infinite;
+}
+
+/* Diyas */
+.sutra-fest-diyas {
+  position: absolute;
+  inset: auto 0 18px;
+  display: flex;
+  justify-content: center;
+  gap: clamp(18px, 4.5vw, 64px);
+}
+.sutra-fest-diya {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+.sutra-fest-diya svg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sutra-fest-halo {
+  position: absolute;
+  left: 50%;
+  top: 25%;
+  width: 240%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 190 80 / 0.4), rgb(242 140 27 / 0.1) 55%, transparent);
+  animation: sutra-fest-dim 1.2s ease-in-out infinite alternate;
+}
+.sutra-fest-lampline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.sutra-fest-lampline::before,
+.sutra-fest-lampline::after {
+  content: "";
+  flex: 0 0 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--color-accent-light)));
+}
+.sutra-fest-lampline::after {
+  background: linear-gradient(90deg, rgb(var(--color-accent-light)), transparent);
+}
+.sutra-fest-lampline .sutra-fest-diya {
+  width: 26px;
+  height: 26px;
+}
+
+/* The Diwali Edit's band */
+.sutra-fest-band {
+  margin-top: 3.5rem;
+  border-top: 1px solid rgb(242 140 27 / 0.3);
+  background: radial-gradient(70% 420px at 50% 0%, rgb(127 29 29 / 0.5), transparent 70%);
+}
+.sutra-fest-band > section {
+  padding-top: 3rem;
+}
+.sutra-fest-name {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: 1.15em;
+  color: #ffd36b;
+}
+
+/* Sparks drifting up the home page */
+.sutra-fest-embers {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sutra-fest-embers i {
+  position: absolute;
+  bottom: -10px;
+  left: var(--x);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: #ffd36b;
+  box-shadow: 0 0 6px 1px rgb(255 190 80 / 0.7);
+  opacity: 0;
+  animation: sutra-fest-rise var(--t) linear var(--d) infinite;
+}
+
+/* Footer */
+.sutra-fest-footlamps {
+  position: absolute;
+  inset: -22px 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: clamp(28px, 7vw, 120px);
+  pointer-events: none;
+}
+.sutra-fest-footlamps .sutra-fest-diya {
+  width: 30px;
+  height: 30px;
+}
+
+/* Phones and tablets: three lanterns from the right edge, three fireworks in
+   a band above the copy, which moves down to make room. */
+@media (max-width: 1023.98px) {
+  .sutra-fest-lantern:not([data-phone]),
+  .sutra-fest-burst:not([data-phone]) {
+    display: none;
+  }
+  .sutra-fest-lantern {
+    left: calc(100% - var(--r));
+    width: calc(60px * var(--pk));
+  }
+  .sutra-fest-lantern .sutra-fest-cord {
+    height: var(--ph);
+  }
+  .sutra-fest-burst {
+    left: var(--pl);
+    top: var(--py);
+    scale: 0.8;
+  }
+  html[data-fest-theme="DIWALI"] .sutra-hero-copy {
+    padding-top: 150px;
+  }
+}
+@media (max-width: 767.98px) {
+  .sutra-fest-diyas .sutra-fest-diya:nth-child(-n + 3),
+  .sutra-fest-diyas .sutra-fest-diya:nth-child(n + 9),
+  .sutra-fest-footlamps .sutra-fest-diya:nth-child(n + 6) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-dw-hero *,
+  .sutra-dw-hero *::before,
+  .sutra-fest-diya *,
+  .sutra-dw-strand {
+    animation: none !important;
+  }
+  .sutra-fest-embers,
+  .sutra-fest-burst {
+    display: none;
+  }
+}
+@keyframes sutra-fest-dim {
+  to {
+    opacity: 0.65;
+  }
+}
+@keyframes sutra-fest-trail {
+  0% {
+    opacity: 0;
+    transform: translateY(160px);
+  }
+  2% {
+    opacity: 0.9;
+  }
+  10% {
+    opacity: 0.9;
+    transform: translateY(0);
+  }
+  11%,
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+@keyframes sutra-fest-ray {
+  0%,
+  10% {
+    opacity: 0;
+    transform: translateY(0) scaleY(0.3);
+  }
+  12% {
+    opacity: 1;
+  }
+  34%,
+  100% {
+    opacity: 0;
+    transform: translateY(calc(var(--len) * 0.9)) scaleY(0.6);
+  }
+}
+@keyframes sutra-fest-flash {
+  0%,
+  10% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  11% {
+    opacity: 0.6;
+  }
+  22%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes sutra-fest-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), -70vh);
+  }
+}
+
+/* Notifications (components/Notifications.tsx). A closing card fades while
+   its slot folds to nothing, so the ones under it slide up. The entrance only
+   fills backwards, so once it ends a swipe's inline transform is in charge. */
+.sutra-toast-slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  padding-bottom: 8px;
+  transition: grid-template-rows 0.25s ease, padding-bottom 0.25s ease, opacity 0.2s ease;
+}
+.sutra-toast-slot.is-leaving {
+  grid-template-rows: 0fr;
+  padding-bottom: 0;
+  opacity: 0;
+}
+.sutra-toast {
+  animation: sutra-toast-in 0.32s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+}
+@keyframes sutra-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+/* The gold thread that runs out with the notification's time. */
+.sutra-toast-thread {
+  animation: sutra-toast-run linear forwards;
+}
+.sutra-toasts:hover .sutra-toast-thread {
+  animation-play-state: paused;
+}
+@keyframes sutra-toast-run {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-toast {
+    animation-duration: 0.01s;
+  }
+  .sutra-toast-slot {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Festival "coming soon" popup (FestivalTeaser): a lantern-lit card over the
+   dimmed page. Phones get a tall card with the same parts, minus the seal.
+   --------------------------------------------------------------------------- */
+.sutra-soon {
+  background: rgb(8 5 6 / 0.62);
+  backdrop-filter: blur(4px);
+}
+.sutra-soon-box {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden auto;
+  border: 1px solid rgb(255 207 107 / 0.35);
+  border-radius: 28px;
+  background:
+    radial-gradient(70% 60% at 80% 30%, rgb(242 154 31 / 0.28), transparent 70%),
+    radial-gradient(90% 60% at 50% 120%, rgb(255 170 60 / 0.25), transparent 60%),
+    linear-gradient(160deg, #1d1214, #120b0d 60%);
+  box-shadow: 0 60px 120px -40px rgba(0, 0, 0, 0.95);
+  color: rgb(var(--color-foreground));
+}
+.sutra-soon-embers {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sutra-soon-toran {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  height: 60px;
+}
+.sutra-soon-lantern {
+  position: absolute;
+  top: -4px;
+  right: 216px;
+  width: 84px;
+  height: 154px;
+  transform-origin: top center;
+  animation: sutra-soon-sway 6s ease-in-out infinite;
+  pointer-events: none;
+}
+.sutra-soon-lantern.is-second {
+  top: -20px;
+  right: 118px;
+  width: 66px;
+  height: 121px;
+  animation-delay: -3s;
+}
+@keyframes sutra-soon-sway {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+.sutra-soon-x {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 999px;
+  background: rgb(17 12 14 / 0.6);
+  transition: background-color 0.2s ease;
+}
+.sutra-soon-x:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+.sutra-soon-in {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  align-items: center;
+  gap: 10px;
+  padding: 84px 44px 26px;
+}
+/* "Coming soon": a lit wick and a slow gold shimmer across the words. */
+.sutra-soon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px 7px 12px;
+  border: 1px solid rgb(255 207 107 / 0.5);
+  border-radius: 999px;
+  background: rgb(255 207 107 / 0.08);
+  font-family: var(--font-jost), var(--font-poppins), system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: transparent;
+  background-image: linear-gradient(100deg, #e6b44c 20%, #fff3cf 40%, #e6b44c 60%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  box-shadow: inset 0 0 0 999px rgb(255 207 107 / 0.06);
+  animation: sutra-soon-shimmer 3.5s linear infinite;
+}
+.sutra-soon-label i {
+  width: 8px;
+  height: 12px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 70%, #fffbe8, #ffcf6b 45%, #f2711c);
+  box-shadow: 0 0 10px 2px rgb(255 190 90 / 0.7);
+  animation: sutra-soon-wick 1.4s ease-in-out infinite;
+}
+@keyframes sutra-soon-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+@keyframes sutra-soon-wick {
+  50% {
+    transform: scale(0.85, 1.12);
+    opacity: 0.85;
+  }
+}
+.sutra-soon-title {
+  margin-top: 16px;
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: 54px;
+  font-weight: 300;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.sutra-soon-title em {
+  font-weight: 400;
+  background: linear-gradient(100deg, #f7e3a1, #f29a1f 45%, #ffd27a 60%, #e6a23c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sutra-soon-body {
+  max-width: 42ch;
+  margin: 14px 0 24px;
+  font-family: var(--font-jost), var(--font-poppins), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: rgb(245 238 232 / 0.85);
+}
+.sutra-soon-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.sutra-soon-gold,
+.sutra-soon-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 24px;
+  border-radius: 999px;
+  font-family: var(--font-jost), var(--font-poppins), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sutra-soon-gold {
+  color: #2a1606;
+  background: linear-gradient(180deg, #ffe2a0, #f2b23a 55%, #d98a12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 10px 26px -10px rgb(242 154 31 / 0.9);
+  transition: filter 0.2s ease;
+}
+.sutra-soon-gold:hover {
+  filter: brightness(1.08);
+}
+.sutra-soon-line {
+  border: 1px solid rgb(255 207 107 / 0.5);
+  transition: background-color 0.2s ease;
+}
+.sutra-soon-line:hover {
+  background: rgb(255 207 107 / 0.1);
+}
+.sutra-soon-fine {
+  margin-top: 16px;
+  font-size: 11.5px;
+  color: rgb(245 238 232 / 0.5);
+}
+.sutra-soon-fine button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sutra-soon-fine button:hover {
+  color: rgb(245 238 232 / 0.85);
+}
+.sutra-soon-seal {
+  width: 160px;
+  height: 160px;
+  justify-self: end;
+  animation: sutra-soon-turn 40s linear infinite;
+}
+.sutra-soon-seal-big {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: 40px;
+  font-weight: 400;
+  fill: #f3dc8a;
+}
+.sutra-soon-seal-small {
+  font-family: var(--font-jost), system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  fill: #ffcf6b;
+}
+@keyframes sutra-soon-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.sutra-soon-diyas {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  padding-bottom: 22px;
+}
+.sutra-soon-diya {
+  width: 46px;
+  height: 40px;
+  flex: none;
+}
+.sutra-soon-flame {
+  transform-origin: 32px 26px;
+  animation: sutra-soon-flicker 1.6s ease-in-out infinite;
+}
+.sutra-soon-halo {
+  animation: sutra-soon-halo 1.6s ease-in-out infinite;
+}
+@keyframes sutra-soon-flicker {
+  25% {
+    transform: scale(0.94, 1.08) skewX(2deg);
+  }
+  50% {
+    transform: scale(1.04, 0.95) skewX(-2deg);
+  }
+  75% {
+    transform: scale(0.97, 1.05) skewX(1deg);
+  }
+}
+@keyframes sutra-soon-halo {
+  50% {
+    opacity: 0.65;
+  }
+}
+@media (max-width: 767.98px) {
+  .sutra-soon-box {
+    border-radius: 26px;
+  }
+  .sutra-soon-lantern {
+    right: 64px;
+    width: 60px;
+    height: 110px;
+  }
+  .sutra-soon-lantern.is-second {
+    display: none;
+  }
+  .sutra-soon-in {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 80px 22px 18px;
+  }
+  /* Flows as text, so a narrow phone wraps it after "Coming soon ·". As a flex
+     row it broke inside "Coming soon" and left the dot on a line of its own. */
+  .sutra-soon-label {
+    display: inline-block;
+    border-radius: 18px;
+    line-height: 1.7;
+  }
+  .sutra-soon-label i {
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: -1px;
+  }
+  .sutra-soon-seal {
+    display: none;
+  }
+  .sutra-soon-title {
+    font-size: 40px;
+  }
+  .sutra-soon-body {
+    margin-bottom: 18px;
+    font-size: 14px;
+  }
+  .sutra-soon-ctas {
+    flex-direction: column;
+  }
+  .sutra-soon-diyas {
+    gap: 12px;
+  }
+  .sutra-soon-diya {
+    width: 32px;
+    height: 28px;
+  }
+  .sutra-soon-diya:nth-child(n + 8) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-soon-lantern,
+  .sutra-soon-label,
+  .sutra-soon-label i,
+  .sutra-soon-seal,
+  .sutra-soon-flame,
+  .sutra-soon-halo {
+    animation: none;
+  }
+}

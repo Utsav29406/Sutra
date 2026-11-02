@@ -1,0 +1,236 @@
+/*
+  Sutra Mobile: every style that applies to phones only (below Tailwind's md
+  breakpoint, 768px) or to the festival look on phones. Loaded after
+  globals.css (see app/layout.tsx), so these win over the shared rules at the
+  same specificity. Tablets and desktop never see any of it.
+
+  Guide: README.md in this folder.
+*/
+
+/*
+  Phones only — below Tailwind's `md` breakpoint, so nothing here can reach the
+  desktop layout.
+
+  iOS Safari zooms the entire page when a field smaller than 16px takes focus,
+  and it does not zoom back out. Tapping search or the coupon box left the user
+  scrolled sideways on a page that no longer fit. Nine fields sat at 12-14px.
+
+  Unlike the form rules in globals.css, these guards are NOT inside :where(): they have to
+  outscore Tailwind's own .text-sm / .text-xs (0,1,0), and a media query adds no
+  specificity of its own. 16px here is a functional floor, not a style choice -
+  it is the documented threshold that stops the zoom.
+*/
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Phones only: product grids run edge to edge in two columns, separated by
+   hairlines rather than gaps, as on Flipkart. Desktop and tablet keep the
+   spaced grid. Doubled class so it wins over the grid utilities.
+   ------------------------------------------------------------------------ */
+@media (max-width: 767.98px) {
+  .sutra-cards.sutra-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-inline: -1.5rem;
+    column-gap: 0;
+    row-gap: 0;
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+  }
+  .sutra-cards > * {
+    padding: 0.625rem 0.625rem 0.9rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  }
+  .sutra-cards > *:nth-child(odd) {
+    border-right: 1px solid rgb(255 255 255 / 0.08);
+  }
+  /* Cards off screen aren't laid out or painted until scrolled near: on a
+     throttled phone this took the shop's dropped frames from ~28% to ~3%.
+     `auto` remembers each card's real height once it has been drawn. */
+  .sutra-cards > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 350px;
+  }
+}
+
+/* Phones only: every mandala is drawn at half its desktop size (the width and
+   height attributes stay as they are for tablets and desktop; CSS outranks
+   them). They also stop turning on phones - see MandalaMotif. */
+@media (max-width: 767.98px) {
+  .sutra-mandala {
+    width: calc(var(--mandala-size, 260px) * 0.5);
+    height: calc(var(--mandala-size, 260px) * 0.5);
+  }
+}
+
+/* Phones only: lighter effects for smooth scrolling. Measured on a throttled
+   phone, the animated blurred glow and the frosted-glass bars (backdrop
+   blur re-done on every scrolled frame) were most of the dropped frames.
+   On phones the glow holds still without the blur filter (its gradients are
+   soft already) and bars are near-solid instead of frosted. */
+@media (max-width: 767.98px) {
+  .sutra-glow {
+    filter: none;
+    animation: none;
+  }
+  .sutra-bloom {
+    animation: none;
+    will-change: auto;
+  }
+  .sutra-header {
+    background-color: rgb(var(--color-cream) / 0.97);
+  }
+  .backdrop-blur-sm,
+  .backdrop-blur-xl,
+  .backdrop-blur-\[2px\] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  /* The logo's thread-draw loop (header and footer, every page) and the hero's
+     shimmering text repaint on every frame for as long as the page is open:
+     neither can run on the GPU. Phones show them still and complete. */
+  .sutra-strand {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .shimmer-text {
+    animation: none;
+  }
+  /* App-like taps: no grey flash, no double-tap zoom delay. */
+  a,
+  button,
+  label,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Short phones (iPhone SE and the like): the sign-in and sign-up cards drop
+   their small knot and eyebrow line so the form fits between the header and
+   the tab bar. Never applies from tablet width up. */
+@media (max-width: 767.98px) and (max-height: 760px) {
+  .sutra-auth-short-hide {
+    display: none;
+  }
+}
+
+/*
+  Festival look on phones (festival/ in this folder). FESTIVAL_GATE sets --night
+  and --on-night on <html> to the running day's colour (Navratri's royal blue
+  on night 4); these are the fallbacks outside a festival.
+*/
+:root {
+  --night: #d4af37;
+  --on-night: #1a1416;
+}
+/* Marigold garland with a mango leaf on every third flower. */
+.sutra-toran {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 2px;
+  overflow: hidden;
+}
+.sutra-toran::before {
+  content: "";
+  position: absolute;
+  inset: 5px 0 auto;
+  height: 1px;
+  background: rgb(243 154 30 / 0.5);
+}
+.sutra-toran b {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #ffd36a 0 18%, #f39a1e 40%, #c96a0c 100%);
+}
+.sutra-toran b:nth-child(4n + 3) {
+  background: radial-gradient(circle at 50% 45%, #fff1a8 0 18%, #f6c935 40%, #c99a12 100%);
+}
+.sutra-toran b:nth-child(3n)::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 11px;
+  width: 8px;
+  height: 13px;
+  background: #3f8a3a;
+  clip-path: polygon(50% 0, 100% 35%, 50% 100%, 0 35%);
+}
+/* The Diwali toran (DiwaliDecor's swags), smaller for phones. */
+.sutra-fest-phonetoran {
+  display: flex;
+  justify-content: center;
+  height: 34px;
+  overflow: hidden;
+}
+.sutra-fest-phonetoran svg {
+  flex: none;
+  width: 110px;
+  height: 62px;
+  overflow: visible;
+}
+.sutra-story-ring {
+  background: conic-gradient(var(--night), #f39a1e, rgb(var(--color-accent-light)), var(--night));
+}
+.sutra-tonight {
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--night) 55%, transparent), transparent 60%),
+    linear-gradient(160deg, color-mix(in srgb, var(--night) 34%, rgb(var(--color-cream))), rgb(var(--color-cream)) 75%);
+  border: 1px solid color-mix(in srgb, var(--night) 45%, transparent);
+}
+/* A ring of rangoli dots behind the corner of the tonight card. */
+.sutra-rangoli {
+  position: absolute;
+  right: -54px;
+  top: -54px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  opacity: 0.55;
+  pointer-events: none;
+  background: repeating-conic-gradient(rgb(var(--color-accent-light) / 0.55) 0 3deg, transparent 3deg 15deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 40%, #000 41% 44%, transparent 45% 58%, #000 59% 61%, transparent 62%);
+  mask: radial-gradient(circle, transparent 0 40%, #000 41% 44%, transparent 45% 58%, #000 59% 61%, transparent 62%);
+}
+@media (max-width: 767.98px) {
+  /* The festival's store joins the bottom tabs, in the middle. */
+  html[data-festival] .sutra-tabs {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  /* Tonight's colour runs along the bottom of the header. */
+  html[data-festival] .sutra-header {
+    border-bottom: 2px solid var(--night);
+  }
+}
+
+/* Product page on phones: the photo, name and price show at first paint
+   instead of fading in, which had to wait for the page's JavaScript (about 4
+   seconds on a mid-range phone on 4G). Desktop keeps its fade. */
+@media (max-width: 767.98px) {
+  .sutra-no-entrance {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Notifications on phones drop in from under the header instead of sliding
+   in from the right (components/Notifications.tsx). */
+@media (max-width: 767.98px) {
+  .sutra-toast {
+    animation-name: sutra-toast-drop;
+  }
+}
+@keyframes sutra-toast-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
