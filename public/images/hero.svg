@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!--
+    Ground only: the gradient wash plus its warm glow.
+
+    The five paisley motifs that used to sit in the corners and at bottom-centre
+    were removed — the mandalas rendered by Hero.tsx are the hero's ornament now.
+    The originals are kept in git history / scratchpad\hero.svg.bak.
+  -->
+  <defs>
+    <linearGradient id="hero" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c0519"/>
+      <stop offset="45%" stop-color="#831843"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#d4af37" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#hero)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+</svg>

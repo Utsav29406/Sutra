@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    The Sutra knot, taken verbatim from components/Logo.tsx so the tab icon and
+    the in-page logotype are the same artwork.
+
+    No background: the canvas stays transparent, so the mark sits directly on
+    whatever the browser paints behind a tab, light or dark. The maroon is the
+    primary token (#c24a4a), the tone already chosen to hold up against both the
+    near-black site ground and a white surface.
+
+    Scaled 1.18x about the centre, so the rings fill the canvas and stay legible
+    at 16px. The knot spans x 9.5-90.5 (ring centres 37 and 63, radius 23, plus
+    half the stroke), so anything past about 1.2x pushes the outer edges of both
+    rings off the canvas - 1.3x did, and the favicon looked cut on both sides.
+  -->
+  <g transform="translate(50 50) scale(1.18) translate(-50 -50)"
+     fill="none"
+     stroke="#c24a4a"
+     stroke-width="9"
+     stroke-linecap="round">
+    <path d="M53.83 34.32 A23 23 0 1 1 45.62 28.67" />
+    <path d="M46.17 65.68 A23 23 0 1 1 54.38 71.33" />
+  </g>
+</svg>
