@@ -62,6 +62,16 @@ export default function Footer() {
                 Checkout
               </Link>
             </li>
+            <li>
+              <Link className="sutra-underline hover:text-primary" href="/privacy">
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link className="sutra-underline hover:text-primary" href="/terms">
+                Terms of Service
+              </Link>
+            </li>
           </ul>
         </div>
 
