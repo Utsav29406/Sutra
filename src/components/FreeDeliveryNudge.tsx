@@ -7,12 +7,21 @@ import { formatPrice } from "@/lib/utils";
  * "Add ₹X more for free delivery" with a thread that fills toward the
  * threshold; "Free delivery unlocked" once the bag clears it. Counts the
  * subtotal before any discount, as checkout does (lib/pricing). Not shown while
- * a festival already makes delivery free.
+ * a festival already makes delivery free. `threshold` is lower for Sutra Gold
+ * members (lib/circle.ts).
  */
-export function FreeDeliveryNudge({ subtotal, className = "" }: { subtotal: number; className?: string }) {
+export function FreeDeliveryNudge({
+  subtotal,
+  threshold = FREE_SHIPPING_THRESHOLD,
+  className = "",
+}: {
+  subtotal: number;
+  threshold?: number;
+  className?: string;
+}) {
   if (subtotal <= 0) return null;
-  const left = FREE_SHIPPING_THRESHOLD - subtotal;
-  const share = Math.min(1, subtotal / FREE_SHIPPING_THRESHOLD);
+  const left = threshold - subtotal;
+  const share = Math.min(1, subtotal / threshold);
   return (
     <div className={`text-[13px] ${className}`}>
       <p className={left > 0 ? "text-foreground/75" : "font-medium text-accent-light"}>

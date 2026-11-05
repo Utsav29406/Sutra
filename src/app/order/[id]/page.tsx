@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { m as motion } from "framer-motion";
 import { CheckCircle2, Package, Printer, Truck } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth";
+import { useCartStore } from "@/lib/store/cart";
+import { verifyPayment } from "@/lib/cashfree-client";
 import { useHydrated } from "@/lib/useHydrated";
 import { formatPrice } from "@/lib/utils";
-import { STATUS_STYLES } from "@/lib/order";
+import { paymentLabel, STATUS_STYLES } from "@/lib/order";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { OrderTimeline } from "@/components/OrderTimeline";
@@ -20,8 +22,44 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
   const orders = useAuthStore((s) => s.orders);
   const loaded = useAuthStore((s) => s.loaded);
   const hydrated = useHydrated();
+  const rememberOrder = useAuthStore((s) => s.rememberOrder);
+  const clearCart = useCartStore((s) => s.clearCart);
 
-  if (!hydrated || !loaded) return <PageSkeleton rows={2} />;
+  // Back from Cashfree's own page (in-app browsers can't show the popup): ask
+  // the server whether it was paid before showing the order.
+  const [checking, setChecking] = useState(false);
+  const [unpaid, setUnpaid] = useState(false);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("payment") !== "check") return;
+    setChecking(true);
+    url.searchParams.delete("payment");
+    window.history.replaceState(null, "", url.pathname);
+    verifyPayment(id).then(async (result) => {
+      if (result.paid && result.order) {
+        clearCart();
+        rememberOrder(result.order);
+      } else setUnpaid(true);
+      setChecking(false);
+    });
+  }, [id, clearCart, rememberOrder]);
+
+  if (!hydrated || !loaded || checking) return <PageSkeleton rows={2} />;
+
+  if (unpaid) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
+        <Package size={40} strokeWidth={1.2} className="text-foreground/40" />
+        <h1 className="font-display text-2xl text-primary">Payment not completed.</h1>
+        <p className="max-w-sm text-sm text-foreground/60">
+          No money was taken and your bag is still saved. Try again, or choose Cash on Delivery.
+        </p>
+        <Link href="/checkout" className="mt-2 rounded-full bg-primary px-6 py-2.5 text-sm text-white transition hover:bg-primary-dark">
+          Back to checkout
+        </Link>
+      </div>
+    );
+  }
 
   const order = orders.find((o) => o.id === id);
 
@@ -84,7 +122,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.15em] text-foreground/45">Payment</p>
-              <p className="mt-0.5 font-medium">{order.paymentMethod === "cod" ? "Cash on Delivery" : "Card / UPI"}</p>
+              <p className="mt-0.5 font-medium">{paymentLabel(order)}</p>
             </div>
             <div className="flex items-center gap-2">
               <Truck size={16} className="text-accent" />

@@ -1,3 +1,5 @@
+import { tierFromCode } from "@/lib/circle";
+
 /**
  * Festival offers: a percentage off everything and free delivery, applied by
  * itself between two dates, with no code to type. Checkout, the cart, product
@@ -261,8 +263,13 @@ export function themeFestival(now: number = Date.now()): Festival | null {
   return FESTIVALS.find((f) => f.themeFrom && now >= indiaMidnight(f.themeFrom) && now < festivalEnd(f)) ?? null;
 }
 
-export function activeFestival(now: number = Date.now()): Festival | null {
-  return FESTIVALS.find((f) => now >= festivalStart(f) && now < festivalEnd(f)) ?? null;
+/**
+ * The festival whose prices apply now. `earlyMs` opens it that much sooner
+ * (Sutra Gold members get festival prices early); it still ends for
+ * everyone at the same time.
+ */
+export function activeFestival(now: number = Date.now(), earlyMs = 0): Festival | null {
+  return FESTIVALS.find((f) => now >= festivalStart(f) - earlyMs && now < festivalEnd(f)) ?? null;
 }
 
 /** The festival whose "coming soon" popup should show now: its teaser has begun and its offer hasn't. */
@@ -294,10 +301,12 @@ export function festivalPrice(price: number, festival: Festival): number {
   return price - Math.round((price * festival.percentOff) / 100);
 }
 
-/** "Navratri offer" for an order's festival id, else "Coupon CODE". */
+/** "Navratri offer" for an order's festival id, "Sutra Gold · Weave" for a member price, else "Coupon CODE". */
 export function offerLabel(code: string): string {
   const festival = findFestival(code);
-  return festival ? `${festival.name} offer` : `Coupon ${code}`;
+  if (festival) return `${festival.name} offer`;
+  const tier = tierFromCode(code);
+  return tier ? `Sutra Gold · ${tier.name}` : `Coupon ${code}`;
 }
 
 /**

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrder, setOrderStatus } from "@/lib/server/orders";
+import { getOrder, markOrderRefunded, setOrderStatus } from "@/lib/server/orders";
+import { cashfreeEnabled, refundCashfreeOrder } from "@/lib/server/cashfree";
 import { sendOrderStatusUpdate } from "@/lib/server/email";
 import { getSession } from "@/lib/server/session";
-import { canCancel, canRequestReturn, type Order, type OrderStatus } from "@/lib/order";
+import { canCancel, canRequestReturn, isDemoPayment, type Order, type OrderStatus } from "@/lib/order";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,7 +61,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       from = existing.status;
     }
 
-    const order = await setOrderStatus(id, status, from);
+    let order = await setOrderStatus(id, status, from);
     if (!order) {
       return from
         ? NextResponse.json(
@@ -68,6 +69,23 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
             { status: 409 }
           )
         : NextResponse.json({ ok: false, error: "No such order." }, { status: 404 });
+    }
+
+    // A paid online order that is cancelled or comes back is refunded in full,
+    // to the card or UPI account it came from. If Cashfree refuses, the order
+    // stays "paid" so the admin can see it still needs refunding.
+    if ((status === "Cancelled" || status === "Returned") && order.paymentStatus === "paid") {
+      try {
+        // A demo payment moved no money, so its refund is only recorded.
+        if (!isDemoPayment(order)) {
+          if (!cashfreeEnabled()) throw new Error("Cashfree keys are not set");
+          await refundCashfreeOrder(order.id, order.total);
+        }
+        await markOrderRefunded(order.id);
+        order = { ...order, paymentStatus: "refunded" };
+      } catch (error) {
+        console.error("[orders] refund failed", order.id, error);
+      }
     }
 
     // Status is already committed; a mail failure must not fail the update.

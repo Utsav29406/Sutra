@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listOrders, createOrder } from "@/lib/server/orders";
+import { listOrders, createOrder, deleteUnpaidOrder } from "@/lib/server/orders";
+import { cashfreeMode, createCashfreeOrder, paymentProvider } from "@/lib/server/cashfree";
 import { sendOrderConfirmation } from "@/lib/server/email";
 import type { Order, OrderStatus } from "@/lib/order";
 import { getSession } from "@/lib/server/session";
 import { checkItems, checkTotals } from "@/lib/server/order-totals";
+import { getCircle } from "@/lib/server/circle";
+import { findTier } from "@/lib/circle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,9 +61,11 @@ function describeProblem(order: Order): string | null {
   if ((order.customerName ?? "").length > 120) return "That name is too long.";
   if ((order.phone ?? "").length > 20) return "That phone number is too long.";
   if ((order.couponCode ?? "").length > 40) return "That coupon code is not valid.";
-  // Card / UPI was a demo with no payment taken. Until a payment gateway is
-  // connected, an order marked "card" would read as paid when it isn't.
-  if (order.paymentMethod !== "cod") return "Only Cash on Delivery is available right now.";
+  // "card" is online payment: Cashfree when its keys are set, else the demo gateway.
+  if (order.paymentMethod !== "cod" && order.paymentMethod !== "card") return "Choose how you'd like to pay.";
+  if (order.paymentMethod === "card" && (order.phone ?? "").replace(/\D/g, "").length < 10) {
+    return "Enter a 10-digit phone number to pay online.";
+  }
   if (!STATUSES.includes(order.status)) return "Unknown order status.";
   if (!Number.isFinite(order.total) || order.total < 0) return "That order total is not valid.";
   if (order.discount != null && (!Number.isFinite(order.discount) || order.discount < 0)) {
@@ -107,13 +112,26 @@ export async function POST(req: NextRequest) {
   order.status = "Processing";
   order.placedAt = new Date().toISOString();
   delete order.updatedAt;
+  // Never paid on arrival, whatever the request says: only Cashfree's answer
+  // (api/payments/verify, api/payments/webhook) marks it paid.
+  if (order.paymentMethod === "card") order.paymentStatus = "pending";
+  else delete order.paymentStatus;
+  delete order.paymentRef;
 
   const problem = describeProblem(order) ?? checkItems(order);
   if (problem) {
     return NextResponse.json({ ok: false, error: problem }, { status: 400 });
   }
 
-  const checked = checkTotals(order);
+  // The member level comes from the database, never from the request.
+  let member = null;
+  try {
+    member = findTier((await getCircle(session.email))?.tier);
+  } catch (error) {
+    console.error("[orders] circle lookup failed", error);
+    return NextResponse.json({ ok: false, error: "Could not check your order. Please try again." }, { status: 500 });
+  }
+  const checked = checkTotals(order, Date.now(), member);
   if (typeof checked === "string") {
     return NextResponse.json({ ok: false, error: checked }, { status: 409 });
   }
@@ -126,6 +144,31 @@ export async function POST(req: NextRequest) {
 
   try {
     const saved = await createOrder(order);
+
+    if (saved.paymentMethod === "card" && paymentProvider() === "sutrapay") {
+      // Sutra Pay: the browser shows its window, which pays through api/payments/sutrapay.
+      return NextResponse.json({ ok: true, order: saved, payment: { provider: "sutrapay" } }, { status: 201 });
+    }
+
+    if (saved.paymentMethod === "card") {
+      // The confirmation email waits for the payment; the browser opens the
+      // Cashfree window with this session.
+      try {
+        const cf = await createCashfreeOrder(saved);
+        if (!cf.payment_session_id) throw new Error("Cashfree returned no payment session");
+        return NextResponse.json(
+          { ok: true, order: saved, payment: { provider: "cashfree", sessionId: cf.payment_session_id, mode: cashfreeMode() } },
+          { status: 201 }
+        );
+      } catch (error) {
+        console.error("[orders] Cashfree order failed", error);
+        await deleteUnpaidOrder(saved.id).catch(() => {});
+        return NextResponse.json(
+          { ok: false, error: "Online payment couldn't start. Please try again, or choose Cash on Delivery." },
+          { status: 502 }
+        );
+      }
+    }
 
     // The order is already safe in the database, so a mail failure must not turn
     // a successful purchase into an error for the customer. Log it and move on.

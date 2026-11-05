@@ -23,13 +23,34 @@ export interface Order {
   total: number;
   discount?: number;
   couponCode?: string;
+  /** "card" is online payment through Cashfree (UPI, cards, netbanking, wallets). */
   paymentMethod: "cod" | "card";
+  /** Online orders only: "pending" until Cashfree confirms the money. */
+  paymentStatus?: PaymentStatus;
+  /** Cashfree's order reference, or "SPAY-…" for Sutra Pay (the dummy gateway). */
+  paymentRef?: string;
   address: string;
   status: OrderStatus;
   email: string;
   /** Captured at checkout so the emailed invoice can be addressed properly. */
   customerName?: string;
   phone?: string;
+}
+
+export type PaymentStatus = "pending" | "paid" | "refunded";
+
+/** "Cash on Delivery", "Paid online", ... for the order page, admin, emails and invoice. */
+export function paymentLabel(order: Pick<Order, "paymentMethod" | "paymentStatus" | "paymentRef">): string {
+  if (order.paymentMethod === "cod") return "Cash on Delivery";
+  const demo = isDemoPayment(order) ? " (demo)" : "";
+  if (order.paymentStatus === "paid") return `Paid online${demo}`;
+  if (order.paymentStatus === "refunded") return `Paid online${demo} · refunded`;
+  return "Online · payment pending";
+}
+
+/** Paid through Sutra Pay, the dummy gateway, so no money moved. */
+export function isDemoPayment(order: Pick<Order, "paymentRef">): boolean {
+  return !!order.paymentRef?.startsWith("SPAY-");
 }
 
 export const RETURN_WINDOW_DAYS = 7;
@@ -60,6 +81,8 @@ export function canRequestReturn(order: Order): boolean {
 }
 
 export function countsAsRevenue(order: Order): boolean {
+  // An online order whose payment never came through earned nothing.
+  if (order.paymentStatus === "pending") return false;
   return order.status !== "Cancelled" && order.status !== "Returned";
 }
 

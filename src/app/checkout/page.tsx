@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { m as motion } from "framer-motion";
-import { CreditCard, IndianRupee, ShoppingBag, Tag, X } from "lucide-react";
+import { CreditCard, IndianRupee, QrCode, ShoppingBag, Tag, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCartStore } from "@/lib/store/cart";
 import { useAuthStore } from "@/lib/store/auth";
@@ -15,9 +15,11 @@ import type { Order } from "@/lib/order";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { FreeDeliveryNudge } from "@/components/FreeDeliveryNudge";
-import { activeFestival } from "@/lib/festival";
-import { findCoupon, quote, type Coupon } from "@/lib/pricing";
-import { useNow } from "@/lib/useFestival";
+import { activeFestival, DAY_MS } from "@/lib/festival";
+import { findCoupon, freeDeliveryFrom, quote, type Coupon } from "@/lib/pricing";
+import { useMember, useNow } from "@/lib/useFestival";
+import { openCashfreeCheckout, verifyPayment } from "@/lib/cashfree-client";
+import { SutraPay, type PayOutcome } from "@/components/SutraPay";
 import Photo from "@/components/Photo";
 
 const inputClass = "w-full rounded-xl border border-white/12 px-4 py-3 text-sm outline-none transition-colors focus:border-primary";
@@ -30,10 +32,27 @@ export default function CheckoutPage() {
   const authLoaded = useAuthStore((s) => s.loaded);
   const addOrder = useAuthStore((s) => s.addOrder);
   const consume = useStockStore((s) => s.consume);
+  const rememberOrder = useAuthStore((s) => s.rememberOrder);
   const hydrated = useHydrated();
 
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "card">("cod");
+  // UPI and Card are both online payment ("card" on the order); the choice
+  // only picks which tab the payment window opens on.
+  const [payChoice, setPayChoice] = useState<"cod" | "upi" | "card">("cod");
+  const paymentMethod: "cod" | "card" = payChoice === "cod" ? "cod" : "card";
   const [placing, setPlacing] = useState(false);
+  // Online payment shows once the server says Cashfree is set up.
+  const [online, setOnline] = useState<{ enabled: boolean; mode: "sandbox" | "production" | "demo" } | null>(null);
+  useEffect(() => {
+    fetch("/api/payments", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setOnline({ enabled: !!d?.online, mode: d?.mode === "production" || d?.mode === "demo" ? d.mode : "sandbox" }))
+      .catch(() => setOnline({ enabled: false, mode: "sandbox" }));
+  }, []);
+  // The Sutra Pay window: open while it holds an order.
+  const [sutraPay, setSutraPay] = useState<{ orderId: string; amount: number; resolve: (o: PayOutcome) => void } | null>(null);
+  function payWithSutraPay(orderId: string, amount: number): Promise<PayOutcome> {
+    return new Promise((resolve) => setSutraPay({ orderId, amount, resolve }));
+  }
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -51,11 +70,15 @@ export default function CheckoutPage() {
 
   // A festival offer applies by itself and takes no codes while it runs. The
   // same quote() checks the order again on the server.
+  // Sutra Gold members get their member price and early festival prices; the
+  // server prices the order again with the level from the database.
   const now = useNow();
-  const festival = now === null ? null : activeFestival(now);
-  const priced = quote(hydrated ? items : [], festival ? null : (appliedCoupon?.code ?? null), now ?? 0);
+  const member = useMember();
+  const festival = now === null ? null : activeFestival(now, member ? member.earlyDays * DAY_MS : 0);
+  const priced = quote(hydrated ? items : [], festival ? null : (appliedCoupon?.code ?? null), now ?? 0, member);
   const { subtotal, discount, shipping, total } = priced;
-  const couponOk = !festival && !!appliedCoupon && !priced.couponError && discount > 0;
+  const couponOk = !festival && !!appliedCoupon && !priced.couponError && discount > 0 && !priced.memberApplied;
+  const deliveryFrom = freeDeliveryFrom(member);
 
   /*
    * Ordering requires an account. The bag stays open to everyone - asking for a
@@ -86,7 +109,7 @@ export default function CheckoutPage() {
       setCouponError("Enter a code.");
       return;
     }
-    const result = quote(items, couponInput, Date.now());
+    const result = quote(items, couponInput, Date.now(), member);
     const coupon = findCoupon(couponInput);
     if (result.couponError || !coupon) {
       setAppliedCoupon(null);
@@ -145,6 +168,31 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (result.payment) {
+      // Online: the bag stays until the server confirms the money arrived.
+      let payment: PayOutcome;
+      if (result.payment.provider === "sutrapay") {
+        payment = await payWithSutraPay(order.id, total);
+      } else {
+        try {
+          await openCashfreeCheckout(result.payment.sessionId, result.payment.mode);
+        } catch {
+          // The window could not open; the check below still says what happened.
+        }
+        payment = await verifyPayment(order.id);
+      }
+      if (!payment.paid) {
+        setPlacing(false);
+        toast.error(payment.error ?? "Payment not completed. Your bag is still here: try again, or choose Cash on Delivery.", {
+          duration: 6000,
+        });
+        return;
+      }
+      // The server's copy of the paid order, straight into the account: a
+      // background refresh may already be running and would not include it.
+      rememberOrder(payment.order ?? { ...order, paymentStatus: "paid" });
+    }
+
     consume(items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
     clearCart();
     toast.success(`Order ${order.id} placed. Dhanyavaad!`);
@@ -193,17 +241,40 @@ export default function CheckoutPage() {
             <h2 className="mt-10 font-display text-xl">Payment</h2>
             <div className="mt-5 flex flex-col gap-3">
               {[
-                { value: "cod" as const, icon: IndianRupee, title: "Cash on Delivery", desc: "Pay when your order arrives at your doorstep.", soon: false },
-                // Off until a payment gateway is connected: it took no payment
-                // but marked the order as paid by card.
-                { value: "card" as const, icon: CreditCard, title: "Card / UPI", desc: "Coming soon. Cash on Delivery for now.", soon: true },
+                { value: "cod" as const, icon: IndianRupee, title: "Cash on Delivery", desc: "Pay when your order arrives at your doorstep.", soon: false, test: false },
+                // Online: Sutra Pay (the demo gateway), or Cashfree once its keys
+                // are set on the server (api/payments).
+                {
+                  value: "upi" as const,
+                  icon: QrCode,
+                  title: "UPI",
+                  desc: online?.enabled
+                    ? "Scan a QR code or enter your UPI ID. GPay, PhonePe, Paytm and more."
+                    : online
+                      ? "Coming soon. Cash on Delivery for now."
+                      : "Checking…",
+                  soon: !online?.enabled,
+                  test: online?.enabled && online.mode !== "production",
+                },
+                {
+                  value: "card" as const,
+                  icon: CreditCard,
+                  title: "Credit or debit card",
+                  desc: online?.enabled
+                    ? "Visa, Mastercard and RuPay."
+                    : online
+                      ? "Coming soon. Cash on Delivery for now."
+                      : "Checking…",
+                  soon: !online?.enabled,
+                  test: online?.enabled && online.mode !== "production",
+                },
               ].map((opt) => (
                 <label
                   key={opt.value}
                   className={`flex items-start gap-4 rounded-2xl border p-5 transition ${
                     opt.soon
                       ? "cursor-not-allowed border-white/8 opacity-50"
-                      : paymentMethod === opt.value
+                      : payChoice === opt.value
                         ? "cursor-pointer border-primary bg-primary/5"
                         : "cursor-pointer border-white/12 hover:border-primary/40"
                   }`}
@@ -212,14 +283,29 @@ export default function CheckoutPage() {
                     type="radio"
                     name="payment"
                     disabled={opt.soon}
-                    checked={paymentMethod === opt.value}
-                    onChange={() => setPaymentMethod(opt.value)}
+                    checked={payChoice === opt.value}
+                    onChange={() => setPayChoice(opt.value)}
                     className="mt-1 accent-[var(--color-primary)]"
                   />
                   <opt.icon size={20} className="mt-0.5 text-accent" />
                   <span>
                     <span className="block font-medium">{opt.title}</span>
                     <span className="mt-0.5 block text-sm text-foreground/60">{opt.desc}</span>
+                    {opt.test && payChoice === opt.value && (
+                      <span className="mt-2 block rounded-lg border border-accent/30 bg-accent/[0.07] px-2.5 py-1.5 text-xs leading-relaxed text-accent-light">
+                        {online?.mode === "demo" ? (
+                          <>
+                            Sutra Pay demo: no real money is taken.{" "}
+                            {opt.value === "upi" ? "Scan the QR or use a test UPI ID in the payment window." : "Test cards are in the payment window."}
+                          </>
+                        ) : (
+                          <>
+                            Test mode: no real money is taken. Pay with UPI ID <b className="font-mono">testsuccess@gocash</b> or a
+                            Cashfree test card.
+                          </>
+                        )}
+                      </span>
+                    )}
                   </span>
                 </label>
               ))}
@@ -247,11 +333,15 @@ export default function CheckoutPage() {
                   <dt className="text-foreground/60">Subtotal</dt>
                   <dd>{formatPrice(subtotal)}</dd>
                 </div>
-                {discount > 0 && (festival || appliedCoupon) && (
+                {discount > 0 && (festival || appliedCoupon || priced.memberApplied) && (
                   <div className="flex justify-between text-primary">
                     <dt className="flex items-center gap-1.5">
                       <Tag size={13} />
-                      {festival ? `${festival.name} offer · ${festival.percentOff}% off` : appliedCoupon?.code}
+                      {festival
+                        ? `${festival.name} offer · ${festival.percentOff}% off`
+                        : priced.memberApplied && member
+                          ? `Sutra Gold · ${member.name} ${member.percentOff}%`
+                          : appliedCoupon?.code}
                     </dt>
                     <dd>−{formatPrice(discount)}</dd>
                   </div>
@@ -260,7 +350,9 @@ export default function CheckoutPage() {
                   <dt className="text-foreground/60">Shipping</dt>
                   <dd>{shipping === 0 ? "Free" : formatPrice(shipping)}</dd>
                 </div>
-                {!festival?.freeShipping && <FreeDeliveryNudge subtotal={subtotal} className="mt-1" />}
+                {!festival?.freeShipping && deliveryFrom > 0 && (
+                  <FreeDeliveryNudge subtotal={subtotal} threshold={deliveryFrom} className="mt-1" />
+                )}
 
                 <div className="mt-2 border-t border-white/12 pt-4">
                   {festival ? (
@@ -339,7 +431,7 @@ export default function CheckoutPage() {
                 disabled={placing}
                 className="btn-shimmer relative mt-6 w-full overflow-hidden rounded-full bg-primary py-3.5 font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
               >
-                {placing ? "Placing order…" : "Place Order"}
+                {placing ? (paymentMethod === "card" ? "Waiting for payment…" : "Placing order…") : paymentMethod === "card" ? `Pay ${formatPrice(total)}` : "Place Order"}
               </button>
               <p className="mt-3 text-center text-xs text-foreground/45">7-day hassle-free returns on all unworn pieces.</p>
             </div>
@@ -363,11 +455,21 @@ export default function CheckoutPage() {
                 disabled={placing}
                 className="rounded-lg bg-accent-light px-7 py-3 text-[15px] font-semibold text-[#1a1416] active:bg-accent disabled:opacity-60"
               >
-                {placing ? "Placing…" : "Place Order"}
+                {placing ? (paymentMethod === "card" ? "Paying…" : "Placing…") : paymentMethod === "card" ? "Pay now" : "Place Order"}
               </button>
             </div>
           </div>
         </form>
+        <SutraPay
+          orderId={sutraPay?.orderId ?? null}
+          amount={sutraPay?.amount ?? 0}
+          phone={form.phone}
+          start={payChoice === "upi" ? "upi" : "card"}
+          onDone={(outcome) => {
+            sutraPay?.resolve(outcome);
+            setSutraPay(null);
+          }}
+        />
       </div>
     </div>
   );

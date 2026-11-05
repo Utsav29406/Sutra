@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useHydrated } from "@/lib/useHydrated";
-import { activeFestival, type Festival } from "@/lib/festival";
+import { activeFestival, DAY_MS, type Festival } from "@/lib/festival";
+import { findTier, type Tier } from "@/lib/circle";
+import { useAuthStore } from "@/lib/store/auth";
 
 /**
  * The time, refreshed every `everyMs`, or null before hydration. Pages are
@@ -18,8 +20,19 @@ export function useNow(everyMs = 60_000): number | null {
   return hydrated ? now : null;
 }
 
-/** The festival offer running now, or null (also before hydration). */
+/** The signed-in shopper's Sutra Gold level, or null. */
+export function useMember(): Tier | null {
+  const signedIn = useAuthStore((s) => !!s.user);
+  const tier = useAuthStore((s) => s.circle?.tier);
+  return signedIn ? findTier(tier) : null;
+}
+
+/**
+ * The festival offer running now for this shopper, or null (also before
+ * hydration). Sutra Gold members see it from their early-access day.
+ */
 export function useFestival(): Festival | null {
   const now = useNow();
-  return now === null ? null : activeFestival(now);
+  const member = useMember();
+  return now === null ? null : activeFestival(now, member ? member.earlyDays * DAY_MS : 0);
 }

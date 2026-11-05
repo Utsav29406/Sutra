@@ -4,6 +4,7 @@ import type { Order, OrderStatus } from "@/lib/order";
 import type { Review } from "@/lib/review";
 import { stopGoogleAutoSignIn } from "@/lib/google";
 import { switchWishlistOwner } from "@/lib/store/wishlist";
+import type { CircleStatus } from "@/lib/circle";
 
 export type { Review };
 
@@ -14,6 +15,9 @@ export interface User {
 }
 
 type Result = { ok: true } | { ok: false; error: string };
+export type PaymentSession =
+  | { provider: "cashfree"; sessionId: string; mode: "sandbox" | "production" }
+  | { provider: "sutrapay" };
 
 interface AuthState {
   /** The signed-in session. This is the only slice kept in localStorage. */
@@ -21,6 +25,8 @@ interface AuthState {
   /** Server-backed caches, refilled from Postgres by `hydrate()`. */
   orders: Order[];
   reviews: Review[];
+  /** Sutra Gold membership of the signed-in user; null when not a member. */
+  circle: CircleStatus | null;
   loaded: boolean;
   loading: boolean;
 
@@ -28,9 +34,21 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<Result>;
   /** Signs in with the ID token from "Continue with Google" or One Tap. */
   signInWithGoogle: (credential: string) => Promise<Result>;
-  signUp: (name: string, email: string, password: string, phone?: string, captcha?: string) => Promise<Result>;
+  signUp: (
+    name: string,
+    email: string,
+    password: string,
+    phone?: string,
+    captcha?: string,
+    joinCircle?: boolean
+  ) => Promise<Result>;
+  /** Joins Sutra Gold (free); needs a signed-in user. */
+  joinCircle: () => Promise<Result>;
   signOut: () => void;
-  addOrder: (order: Order) => Promise<Result>;
+  /** An online order comes back with the Cashfree session to pay it with. */
+  addOrder: (order: Order) => Promise<Result & { payment?: PaymentSession }>;
+  /** An online order the server has just confirmed paid joins the list. */
+  rememberOrder: (order: Order) => void;
   setOrderStatus: (orderId: string, status: OrderStatus) => Promise<Order | null>;
   ordersFor: (email: string | undefined) => Order[];
   addReview: (review: Review) => Promise<Result>;
@@ -77,6 +95,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       orders: [],
       reviews: [],
+      circle: null,
       loaded: false,
       loading: false,
 
@@ -90,10 +109,11 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true });
         const generation = authGeneration;
         try {
-          const [sessionRes, ordersRes, reviewsRes] = await Promise.all([
+          const [sessionRes, ordersRes, reviewsRes, circleRes] = await Promise.all([
             fetch("/api/auth/session", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
             fetch("/api/orders", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
             fetch("/api/reviews", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+            fetch("/api/circle", { cache: "no-store" }).then((r) => r.json()).catch(() => null),
           ]);
           const reviews = reviewsRes?.ok ? (reviewsRes.reviews as Review[]) : get().reviews;
 
@@ -112,6 +132,7 @@ export const useAuthStore = create<AuthState>()(
               // offline is not the same as signing out.
               ...(sessionRes?.ok ? { user: (sessionRes.user as User | null) ?? null } : {}),
               orders: ordersRes?.ok ? (ordersRes.orders as Order[]) : get().orders,
+              circle: circleRes?.ok ? ((circleRes.circle as CircleStatus | null) ?? null) : get().circle,
               reviews,
               loaded: true,
             });
@@ -130,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
         if (!data) return { ok: false, error: NETWORK_ERROR };
         if (!data.ok) return { ok: false, error: String(data.error ?? "Could not sign you in.") };
         authGeneration++;
-        set({ user: data.user as User });
+        set({ user: data.user as User, circle: null });
         // Orders depend on who is signed in, so reload them for this user.
         void get().hydrate(true);
         return { ok: true };
@@ -141,19 +162,19 @@ export const useAuthStore = create<AuthState>()(
         if (!data) return { ok: false, error: NETWORK_ERROR };
         if (!data.ok) return { ok: false, error: String(data.error ?? "Google sign-in failed.") };
         authGeneration++;
-        set({ user: data.user as User });
+        set({ user: data.user as User, circle: null });
         void get().hydrate(true);
         return { ok: true };
       },
 
-      signUp: async (name, email, password, phone, captcha) => {
-        const data = await postJson("/api/auth/signup", { name, email, password, phone, captcha });
+      signUp: async (name, email, password, phone, captcha, joinCircle = false) => {
+        const data = await postJson("/api/auth/signup", { name, email, password, phone, captcha, joinCircle });
         if (!data) return { ok: false, error: NETWORK_ERROR };
         if (!data.ok) {
           return { ok: false, error: String(data.error ?? "Could not create your account.") };
         }
         authGeneration++;
-        set({ user: data.user as User });
+        set({ user: data.user as User, circle: null });
         void get().hydrate(true);
         return { ok: true };
       },
@@ -166,7 +187,15 @@ export const useAuthStore = create<AuthState>()(
         void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
         // Otherwise One Tap would sign a Google customer straight back in.
         stopGoogleAutoSignIn();
-        set({ user: null, orders: [] });
+        set({ user: null, orders: [], circle: null });
+      },
+
+      joinCircle: async () => {
+        const data = await postJson("/api/circle", {});
+        if (!data) return { ok: false, error: NETWORK_ERROR };
+        if (!data.ok) return { ok: false, error: String(data.error ?? "Could not join Sutra Gold.") };
+        set({ circle: (data.circle as CircleStatus | null) ?? null });
+        return { ok: true };
       },
 
       addOrder: async (order) => {
@@ -174,9 +203,14 @@ export const useAuthStore = create<AuthState>()(
         if (!data) return { ok: false, error: NETWORK_ERROR };
         if (!data.ok) return { ok: false, error: String(data.error ?? "Could not save your order.") };
         const saved = (data.order as Order) ?? order;
+        // An online order joins the list only once it is paid (hydrate after
+        // api/payments/verify), the same rule the server applies.
+        if (data.payment) return { ok: true, payment: data.payment as PaymentSession };
         set((state) => ({ orders: [saved, ...state.orders] }));
         return { ok: true };
       },
+
+      rememberOrder: (order) => set((state) => ({ orders: [order, ...state.orders.filter((o) => o.id !== order.id)] })),
 
       setOrderStatus: async (orderId, status) => {
         let data: Record<string, unknown> | null = null;
@@ -228,10 +262,11 @@ export const useAuthStore = create<AuthState>()(
       name: "sutra-auth",
       version: 4,
       // Accounts, orders and reviews live in Postgres now; only the session is local.
-      partialize: (state) => ({ user: state.user }),
+      // circle is kept so a member's gold account pill shows on first paint.
+      partialize: (state) => ({ user: state.user, circle: state.circle }),
       migrate: (persisted) => {
-        const state = (persisted ?? {}) as { user?: User | null };
-        return { user: state.user ?? null };
+        const state = (persisted ?? {}) as { user?: User | null; circle?: CircleStatus | null };
+        return { user: state.user ?? null, circle: state.circle ?? null };
       },
     }
   )

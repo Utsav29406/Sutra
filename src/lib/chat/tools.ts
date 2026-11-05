@@ -1,6 +1,7 @@
 import { products, getProductBySlug } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import type { ChatContext } from "@/lib/chat/catalogue";
+import { paymentLabel } from "@/lib/order";
 
 export interface ProductSummary {
   slug: string;
@@ -220,9 +221,7 @@ export function runTool(
             .join(", ");
           return `Order ${o.id} — status ${o.status}, placed ${new Date(
             o.placedAt
-          ).toDateString()}, total ₹${o.total}, paid by ${
-            o.paymentMethod === "cod" ? "cash on delivery" : "card"
-          }. Items: ${items}. Delivering to: ${o.address}`;
+          ).toDateString()}, total ₹${o.total}, payment: ${paymentLabel(o)}. Items: ${items}. Delivering to: ${o.address}`;
         })
         .join("\n");
       return { result: lines };

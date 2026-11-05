@@ -125,6 +125,152 @@ body {
   color: #f3dc8a;
   box-shadow: 0 0 0 4px rgb(var(--color-accent-light) / 0.1), 0 6px 18px -6px rgb(var(--color-accent-light) / 0.45);
 }
+/* Header "Sutra Gold" link: see-through, edged and lettered in gold, with a
+   streak of light sweeping across every few seconds and a twinkling sparkle.
+   Both move with transform/opacity only, and rest for reduced motion. */
+.sutra-goldnav {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 13px 0 11px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgb(var(--color-accent-light) / 0.55);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgb(var(--color-accent-light) / 0.1), rgb(var(--color-accent) / 0.03));
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: #f0d77f;
+  text-shadow: 0 0 12px rgb(var(--color-accent-light) / 0.35);
+  transition: border-color 0.25s, background-color 0.25s, box-shadow 0.25s, color 0.25s;
+}
+.sutra-goldnav::after {
+  content: "";
+  position: absolute;
+  inset: -2px auto -2px 0;
+  z-index: -1;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgb(255 236 170 / 0.28), transparent);
+  transform: translateX(-120%) skewX(-18deg);
+  animation: sutra-goldsweep 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.sutra-goldnav svg {
+  color: #f6e3a0;
+  animation: sutra-twinkle 3.6s ease-in-out infinite;
+}
+.sutra-goldnav:hover,
+.sutra-goldnav:focus-visible,
+.sutra-goldnav[aria-current="page"] {
+  color: #fbe9a8;
+  border-color: rgb(var(--color-accent-light) / 0.9);
+  background-color: rgb(var(--color-accent-light) / 0.12);
+  box-shadow: 0 0 0 4px rgb(var(--color-accent-light) / 0.08), 0 0 18px -4px rgb(var(--color-accent-light) / 0.55);
+}
+@keyframes sutra-goldsweep {
+  0%,
+  45% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  80%,
+  100% {
+    transform: translateX(260%) skewX(-18deg);
+  }
+}
+@keyframes sutra-twinkle {
+  0%,
+  60%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1.25) rotate(15deg);
+  }
+}
+@media (max-width: 1023px) {
+  .sutra-goldnav {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-goldnav::after,
+  .sutra-goldnav svg {
+    animation: none;
+  }
+}
+
+/* "Offers" pill: maroon, so it reads apart from the gold account pill. In the
+   header (phones only now) it is icon-only; the floating version below keeps
+   its label. */
+.sutra-offerpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 11px;
+  border: 1px solid rgb(var(--color-primary) / 0.55);
+  border-radius: 999px;
+  background: rgb(var(--color-primary) / 0.14);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  color: rgb(var(--color-foreground));
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.sutra-offerpill svg {
+  color: rgb(var(--color-primary));
+}
+.sutra-offerpill:hover,
+.sutra-offerpill:focus-visible,
+.sutra-offerpill[aria-expanded="true"] {
+  background: rgb(var(--color-primary) / 0.24);
+  border-color: rgb(var(--color-primary) / 0.85);
+  box-shadow: 0 0 0 4px rgb(var(--color-primary) / 0.1);
+}
+/* The floating Offers button (tablets and up), styled like the chat button
+   opposite it. More specific than the icon-only rule below, so it keeps its
+   label at every width. */
+.sutra-offerpill.is-floating {
+  width: auto;
+  height: 44px;
+  padding: 0 18px 0 15px;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-color: rgb(var(--color-accent-light) / 0.5);
+  background: rgb(var(--color-primary-dark));
+  color: rgb(var(--color-accent-light));
+  box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.6);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.sutra-offerpill.is-floating svg {
+  color: rgb(var(--color-accent-light));
+}
+.sutra-offerpill.is-floating:hover,
+.sutra-offerpill.is-floating:focus-visible,
+.sutra-offerpill.is-floating[aria-expanded="true"] {
+  transform: translateY(-2px);
+  border-color: rgb(var(--color-accent-light) / 0.85);
+  box-shadow: 0 18px 34px -10px rgb(0 0 0 / 0.66);
+}
+@media (max-width: 1439px) {
+  .sutra-offerpill {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+}
 .sutra-acct {
   --pill-fill: #30271a; /* gold at 12% over the page */
   display: inline-flex;
@@ -172,6 +318,32 @@ body {
 .sutra-acct:hover svg,
 .sutra-acct:focus-visible svg {
   animation: none;
+}
+@media (min-width: 768px) and (max-width: 1439px) {
+  .sutra-acct.is-compact {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+/* Signed in but not in Sutra Gold: the account pill stays plain. The gold
+   pill (and its breathing glow) is a Circle member's. */
+.sutra-acct.is-plain {
+  --pill-fill: rgb(255 255 255 / 0.04);
+  border-color: rgb(255 255 255 / 0.18);
+  color: rgb(var(--color-foreground) / 0.85);
+  animation: none;
+}
+.sutra-acct.is-plain svg {
+  color: rgb(var(--color-foreground) / 0.7);
+  animation: none;
+}
+.sutra-acct.is-plain:hover,
+.sutra-acct.is-plain:focus-visible {
+  --pill-fill: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.3);
+  color: rgb(var(--color-foreground));
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.05);
 }
 @keyframes sutra-breathe {
   0%,
@@ -318,6 +490,9 @@ body {
     background: rgb(var(--color-primary) / 0.14);
     font-size: 12.5px;
     font-weight: 500;
+    /* Never "Bag" over "1" when the header row is tight; search gives way. */
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .sutra-bagpill:hover {
     background: rgb(var(--color-primary) / 0.24);

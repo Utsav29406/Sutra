@@ -1,6 +1,6 @@
 import "server-only";
 import { query, mutate, transaction, toSqlDate, fromSqlDate, normalizeEmail } from "@/lib/db";
-import type { Order, OrderItem, OrderStatus } from "@/lib/order";
+import type { Order, OrderItem, OrderStatus, PaymentStatus } from "@/lib/order";
 
 interface OrderRow {
   id: string;
@@ -15,6 +15,8 @@ interface OrderRow {
   customer_name: string | null;
   phone: string | null;
   status: OrderStatus;
+  payment_status: PaymentStatus | null;
+  payment_ref: string | null;
 }
 
 interface ItemRow {
@@ -49,6 +51,8 @@ function toOrder(row: OrderRow, items: OrderItem[]): Order {
     ...(row.discount !== null ? { discount: Number(row.discount) } : {}),
     ...(row.coupon_code ? { couponCode: row.coupon_code } : {}),
     paymentMethod: row.payment_method,
+    ...(row.payment_status ? { paymentStatus: row.payment_status } : {}),
+    ...(row.payment_ref ? { paymentRef: row.payment_ref } : {}),
     address: row.address,
     status: row.status,
     email: row.email,
@@ -63,12 +67,16 @@ function toOrder(row: OrderRow, items: OrderItem[]): Order {
  * Pass an email to get only that customer's orders - filtered in SQL, so other
  * people's orders never leave the database. Omit it for the whole shop, which
  * only the admin should ever be given.
+ *
+ * A customer doesn't see an online order until it is paid: one left unpaid
+ * (the payment window closed) is not an order they placed. The admin sees it,
+ * marked as payment pending.
  */
 export async function listOrders(email?: string): Promise<Order[]> {
   const rows =
     email === undefined
       ? await query<OrderRow[]>("SELECT * FROM orders ORDER BY placed_at DESC")
-      : await query<OrderRow[]>("SELECT * FROM orders WHERE email = $1 ORDER BY placed_at DESC", [
+      : await query<OrderRow[]>("SELECT * FROM orders WHERE email = $1 AND payment_status IS DISTINCT FROM 'pending' ORDER BY placed_at DESC", [
           normalizeEmail(email),
         ]);
   if (rows.length === 0) return [];
@@ -93,8 +101,8 @@ export async function createOrder(order: Order): Promise<Order> {
     await client.query(
       `INSERT INTO orders
          (id, email, placed_at, updated_at, total, discount, coupon_code,
-          payment_method, address, customer_name, phone, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          payment_method, address, customer_name, phone, status, payment_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         order.id,
         normalizeEmail(order.email ?? ""),
@@ -108,6 +116,7 @@ export async function createOrder(order: Order): Promise<Order> {
         order.customerName?.trim() || null,
         order.phone?.trim() || null,
         order.status,
+        order.paymentStatus ?? null,
       ]
     );
 
@@ -165,4 +174,28 @@ export async function setOrderStatus(
   const items = await query<ItemRow[]>("SELECT * FROM order_items WHERE order_id = $1 ORDER BY id", [id]);
 
   return toOrder(row, items.map(toItem));
+}
+
+/**
+ * Marks an online order paid. Null when it was not pending - already paid (the
+ * webhook and the browser both report the same payment), or not online at all -
+ * so the caller sends the confirmation email exactly once.
+ */
+export async function markOrderPaid(id: string, paymentRef: string | null): Promise<Order | null> {
+  const result = await mutate(
+    `UPDATE orders SET payment_status = 'paid', payment_ref = $2, paid_at = now()
+     WHERE id = $1 AND payment_method = 'card' AND payment_status = 'pending'`,
+    [id, paymentRef]
+  );
+  if (result.affectedRows === 0) return null;
+  return getOrder(id);
+}
+
+export async function markOrderRefunded(id: string): Promise<void> {
+  await mutate(`UPDATE orders SET payment_status = 'refunded' WHERE id = $1 AND payment_status = 'paid'`, [id]);
+}
+
+/** Removes an online order that never reached the payment window. */
+export async function deleteUnpaidOrder(id: string): Promise<void> {
+  await mutate(`DELETE FROM orders WHERE id = $1 AND payment_status = 'pending'`, [id]);
 }

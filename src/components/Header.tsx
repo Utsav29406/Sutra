@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, m as motion } from "framer-motion";
-import { ChevronDown, Heart, ShoppingBag, User } from "lucide-react";
+import { ChevronDown, Heart, ShoppingBag, Sparkles, User } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart";
 import { useWishlistStore } from "@/lib/store/wishlist";
 import { useAuthStore } from "@/lib/store/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { Logo } from "@/components/Logo";
 import SearchBar from "@/components/SearchBar";
+import OffersButton from "@/components/OffersButton";
 import { CollectionsPanel, useCollectionsMenu } from "@/components/CollectionsMenu";
 import { MOBILE_BAR_HIDDEN } from "@/sutra-mobile/MobileTabBar";
 import { DRAWN_FESTIVALS } from "@/lib/festival";
@@ -106,6 +107,9 @@ export default function Header() {
 
   const cartCount = hydrated ? cartItems.reduce((sum, i) => sum + i.quantity, 0) : 0;
   const signedIn = hydrated && !!user;
+  // Gold account pill for Sutra Gold members, a plain one for everyone else.
+  const member = useAuthStore((s) => !!s.circle);
+  const acctPill = `sutra-acct${hydrated && member ? "" : " is-plain"}`;
   const wishlistCount = hydrated ? Object.keys(saved).length : 0;
 
   // Sticky bars further down (the shop's Sort | Filter bar on phones) sit
@@ -139,8 +143,10 @@ export default function Header() {
           - From lg: logo | links | search and icons, as a 1fr-auto-1fr grid so
             the links sit at the true centre of the screen. The right side is
             far wider than the logo, so centring them in the leftover space
-            would have pushed them visibly left. */}
-      <nav className="mx-auto flex max-w-[88rem] flex-wrap items-center justify-between gap-x-4 px-4 py-1 sm:px-6 md:flex-nowrap lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8">
+            would have pushed them visibly left.
+          - 1024–1279px: logo and links together on the left instead, so the
+            search box gets the room centring would leave empty. */}
+      <nav className="mx-auto flex max-w-[88rem] 2xl:max-w-[100rem] flex-wrap items-center justify-between gap-x-4 px-4 py-1 sm:px-6 md:flex-nowrap lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 lg:max-xl:grid-cols-[auto_auto_1fr]">
         <div className="contents md:flex md:min-w-0 md:items-center md:gap-8 lg:contents">
           <Link className="sutra-logo order-1 flex items-center justify-self-start py-1.5 md:order-none" aria-label="Sutra — home" href="/">
             <Logo className="sutra-logo-size" />
@@ -190,11 +196,35 @@ export default function Header() {
               </li>
               );
             })}
+            {/* Sutra Gold: a see-through gold pill with a light that sweeps
+                across it now and then. Kept out of navLinks so the underline
+                thread doesn't try to sit under it. */}
+            {/* The full pill from lg; just the gold sparkle on tablets and
+                tablets. Phones have no link row: they reach Sutra Gold
+                from the Home card, the Offers panel and the footer. */}
+            <li>
+              <Link
+                href="/gold"
+                aria-current={pathname.startsWith("/gold") ? "page" : undefined}
+                aria-label="Sutra Gold"
+                title="Sutra Gold"
+                className="sutra-goldnav"
+              >
+                <Sparkles size={13} aria-hidden="true" />
+                <span className="max-lg:hidden">Sutra Gold</span>
+              </Link>
+            </li>
           </ul>
         </div>
 
         <div className="order-2 flex shrink-0 items-center gap-1 justify-self-end md:order-none md:gap-2 lg:w-full lg:justify-end lg:pl-6">
           <SearchBar />
+
+          {/* Phones only: from tablets up, Offers floats at the bottom-left
+              (layout.tsx) so the search box keeps its width. Phones show the
+              bag up here on product and checkout pages; there is no room for
+              both, and the bag matters more there. */}
+          <OffersButton className={`md:hidden ${MOBILE_BAR_HIDDEN(pathname) ? "max-md:hidden" : ""}`} />
 
           <motion.button
             onClick={openCart}
@@ -211,7 +241,10 @@ export default function Header() {
             <ShoppingBag size={cartCount > 0 ? 16 : 18} className="max-md:h-[18px] max-md:w-[18px]" />
             {cartCount > 0 && (
               <span className="max-md:hidden" aria-hidden="true">
-                Bag <b>{cartCount}</b>
+                {/* The word only from 1280px; below that, icon and count, so
+                    the search box beside it keeps its width. */}
+                <span className="max-xl:hidden">Bag </span>
+                <b>{cartCount}</b>
               </span>
             )}
             <AnimatePresence>
@@ -278,15 +311,16 @@ export default function Header() {
               until the saved session is read, so it never shows the wrong one. */}
           <Link
             href={signedIn ? "/account" : "/login"}
-            className={`ml-1 md:hidden ${signedIn ? "sutra-acct" : "sutra-goldpill"} ${hydrated ? "" : "opacity-0"}`}
+            className={`ml-1 md:hidden ${signedIn ? acctPill : "sutra-goldpill"} ${hydrated ? "" : "opacity-0"}`}
           >
             <User size={14} />
             {signedIn ? "Account" : "Sign in"}
           </Link>
 
           <div ref={accountMenu} className="relative ml-1 max-md:hidden">
-            {/* Signed out: a "Sign in" pill edged in gold thread. Signed in: a soft
-                gold "My account" pill that opens the account menu. */}
+            {/* Signed out: a "Sign in" pill edged in gold thread. Signed in: a
+                "My account" pill that opens the account menu, gold for Circle
+                members and plain otherwise. */}
             {!signedIn ? (
               <Link
                 href="/login"
@@ -302,11 +336,13 @@ export default function Header() {
                 aria-expanded={accountOpen}
                 aria-haspopup="menu"
                 whileTap={{ scale: 0.96 }}
-                className="sutra-acct"
-                aria-label={`My account, signed in as ${user!.name}`}
+                className={`${acctPill} is-compact`}
+                title="My account"
+                aria-label={`My account, signed in as ${user!.name}${member ? ", Sutra Gold member" : ""}`}
               >
                 <User size={15} />
-                My account
+                {/* Icon only below 1440px, so the search box keeps its width. */}
+                <span className="max-[1439px]:hidden">My account</span>
               </motion.button>
             )}
             <AnimatePresence>

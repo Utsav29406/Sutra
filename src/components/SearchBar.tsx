@@ -153,7 +153,7 @@ function SearchField({
       // links, up to 320px, and gives way first when that side gets crowded
       // (the header pads it off the links). The right margin keeps it off the
       // icons beside it.
-      className={`sutra-search relative ${compact ? "w-full" : "hidden min-w-0 md:mr-3 md:block md:w-[220px] lg:w-0 lg:min-w-[150px] lg:max-w-[320px] lg:flex-1"}`}
+      className={`sutra-search relative ${compact ? "w-full" : "hidden min-w-0 md:mr-3 md:block md:w-[160px] lg:w-0 lg:min-w-[150px] lg:max-w-[320px] lg:flex-1"}`}
       data-open={open || undefined}
       data-active={open || typed !== "" || undefined}
     >

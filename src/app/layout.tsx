@@ -14,6 +14,7 @@ import { FESTIVAL_CSS, FESTIVAL_GATE } from "@/sutra-mobile/festival/gate";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
 import ChatWidget from "@/components/ChatWidget";
+import OffersButton from "@/components/OffersButton";
 import SiteBackdrop from "@/components/SiteBackdrop";
 import Press from "@/components/Press";
 import DataBootstrap from "@/components/DataBootstrap";
@@ -129,6 +130,8 @@ export default function RootLayout({
           <MobileTabBar />
           <CartDrawer />
           <ChatWidget />
+          {/* Tablets and up: Offers at the bottom-left, opposite the chat. */}
+          <OffersButton floating className="max-md:hidden print:hidden" />
           <Press />
           <Notifications />
           <FestivalTeaser />

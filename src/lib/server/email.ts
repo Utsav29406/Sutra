@@ -1,6 +1,6 @@
 import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
-import { RETURN_WINDOW_DAYS, type Order, type OrderStatus } from "@/lib/order";
+import { paymentLabel, RETURN_WINDOW_DAYS, type Order, type OrderStatus } from "@/lib/order";
 import { renderInvoice } from "@/lib/server/invoice";
 import { offerLabel } from "@/lib/festival";
 
@@ -297,7 +297,7 @@ export async function sendOrderConfirmation(order: Order): Promise<SendResult> {
     <p style="margin:22px 0 4px;color:#9c908b;font-size:11px;letter-spacing:1.5px;text-transform:uppercase">Delivering to</p>
     <p style="margin:0;color:#c8bdb6;white-space:pre-line">${esc(order.address)}</p>
     <p style="margin:20px 0 0;color:#c8bdb6">
-      Payment: ${order.paymentMethod === "cod" ? "Cash on Delivery" : "Card / UPI"}
+      Payment: ${paymentLabel(order)}
     </p>`;
 
   return send({
@@ -363,7 +363,15 @@ export async function sendOrderStatusUpdate(order: Order): Promise<SendResult | 
 
   const body = `
     <p style="margin:0 0 4px;font-size:20px;color:#f5eee8">Namaste, ${firstName(order)}</p>
-    <p style="margin:0 0 20px;color:#c8bdb6">${copy.line}</p>
+    <p style="margin:0 0 20px;color:#c8bdb6">${
+      order.paymentStatus === "refunded"
+        ? order.status === "Cancelled"
+          ? `Your order has been cancelled. We have refunded ${money(order.total)} to the account you paid from; it usually arrives in 5–7 working days.`
+          : `Your return is complete. We have refunded ${money(order.total)} to the account you paid from; it usually arrives in 5–7 working days.`
+        : order.paymentStatus === "paid" && order.status === "Cancelled"
+          ? "Your order has been cancelled. Your refund is being arranged and we will email you when it is sent."
+          : copy.line
+    }</p>
     <div style="background:rgba(0,0,0,.25);border-radius:10px;padding:16px 18px">
       <div style="color:#9c908b;font-size:11px;letter-spacing:1.5px;text-transform:uppercase">Order</div>
       <div style="font-size:16px;color:#c24a4a;font-family:monospace;margin:4px 0 12px">${esc(order.id)}</div>

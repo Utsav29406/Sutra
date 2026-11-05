@@ -122,7 +122,9 @@ export async function signUp(
   name: string,
   email: string,
   password: string,
-  phone?: string
+  phone?: string,
+  /** Ticked "Join Sutra Gold" on the sign-up form. */
+  joinCircle = false
 ): Promise<SignedIn | { ok: false; error: string }> {
   const trimmedName = name.trim();
   const normalizedEmail = normalizeEmail(email);
@@ -145,8 +147,9 @@ export async function signUp(
 
   try {
     await mutate(
-      "INSERT INTO users (name, email, password_hash, phone, role) VALUES ($1, $2, $3, $4, 'USER')",
-      [trimmedName, normalizedEmail, passwordHash, storedPhone]
+      `INSERT INTO users (name, email, password_hash, phone, role, circle_joined_at)
+       VALUES ($1, $2, $3, $4, 'USER', CASE WHEN $5::boolean THEN now() END)`,
+      [trimmedName, normalizedEmail, passwordHash, storedPhone, joinCircle]
     );
   } catch (error) {
     // Let the unique keys, not a read-then-write race, decide uniqueness.

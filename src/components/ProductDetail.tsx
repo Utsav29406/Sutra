@@ -27,6 +27,7 @@ import { getProductBySlug, type Product } from "@/lib/products";
 import { DRAWN_FESTIVALS, festivalEnd, festivalPrice } from "@/lib/festival";
 import { useFestival } from "@/lib/useFestival";
 import { MiniCard, PhoneFestivalPrice, PhoneFestivalTag } from "@/sutra-mobile/festival/FestivalParts";
+import { CircleLine } from "@/components/CircleParts";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { SizeGuideModal } from "@/components/SizeGuideModal";
 import { ProductReviews } from "@/components/ProductReviews";
@@ -224,6 +225,7 @@ export default function ProductDetail({ product, related }: { product: Product; 
             </div>
             <PhoneFestivalPrice product={product} large />
             <p className="mt-1 text-xs text-foreground/50">Inclusive of all taxes</p>
+            <CircleLine price={product.price} />
             {/* Phones during a festival: the offer, already applied, in tonight's colour. */}
             {DRAWN_FESTIVALS.map((f) => (
               <span key={f.id} data-fest-show={f.id}>
