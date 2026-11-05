@@ -8,12 +8,13 @@ import { Package, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { formatPrice } from "@/lib/utils";
-import { STATUS_STYLES } from "@/lib/order";
+import { paymentLabel, STATUS_STYLES } from "@/lib/order";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { OrderTimeline } from "@/components/OrderTimeline";
 import { OrderActions } from "@/components/OrderActions";
 import { offerLabel } from "@/lib/festival";
+import { CircleCard } from "@/components/CircleParts";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -79,6 +80,10 @@ export default function AccountPage() {
           </div>
         </motion.div>
 
+        <div className="mt-10 max-md:mt-7">
+          <CircleCard />
+        </div>
+
         <h2 className="mt-12 font-display text-2xl">Order History</h2>
 
         {myOrders.length === 0 ? (
@@ -109,7 +114,7 @@ export default function AccountPage() {
                     </Link>
                     <p className="text-sm text-foreground/55">
                       {new Date(order.placedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} ·{" "}
-                      {order.paymentMethod === "cod" ? "Cash on Delivery" : "Card Payment"}
+                      {paymentLabel(order)}
                     </p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[order.status] ?? "bg-white/5"}`}>

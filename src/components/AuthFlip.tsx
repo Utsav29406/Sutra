@@ -241,6 +241,7 @@ function SignUpForm({ active }: { active: boolean }) {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [captcha, setCaptcha] = useState("");
+  const [joinCircle, setJoinCircle] = useState(true);
   const turnstile = useRef<TurnstileHandle>(null);
 
   return (
@@ -257,7 +258,7 @@ function SignUpForm({ active }: { active: boolean }) {
           return;
         }
         setSubmitting(true);
-        const result = await signUp(name, email, password, undefined, captcha);
+        const result = await signUp(name, email, password, undefined, captcha, joinCircle);
         if (!result.ok) {
           setSubmitting(false);
           // The token was spent on this attempt; fetch a fresh one for the next.
@@ -310,6 +311,19 @@ function SignUpForm({ active }: { active: boolean }) {
             the showing side: the sign-in face shouldn't spend a check. */}
         {active && <Turnstile ref={turnstile} onToken={setCaptcha} shownClassName="mt-4" />}
       </div>
+      <label htmlFor="signup-circle" className="flex cursor-pointer items-start gap-2.5 text-[13px] leading-relaxed text-foreground/70">
+        <input
+          id="signup-circle"
+          type="checkbox"
+          checked={joinCircle}
+          onChange={(e) => setJoinCircle(e.target.checked)}
+          className="mt-[3px] h-4 w-4 shrink-0 accent-[rgb(var(--color-accent))]"
+        />
+        <span>
+          Join <b className="font-medium text-accent-light">Sutra Gold</b>, free: free delivery from ₹2,999 and festival
+          prices a day early.
+        </span>
+      </label>
       <motion.button
         type="submit"
         disabled={submitting}

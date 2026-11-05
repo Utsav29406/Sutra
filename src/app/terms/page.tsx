@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
 };
 
-/* Kept in line with what the shop says elsewhere: cash on delivery, 7-day returns on unworn pieces, festival offers by date. */
+/* Kept in line with what the shop says elsewhere: cash on delivery or the Sutra Pay demo, 7-day returns on unworn pieces, festival offers by date. */
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" updated="4 November 2026">
+    <LegalPage title="Terms of Service" updated="5 November 2026">
       <p>
         These terms apply when you use Sutra (wearsutra.vercel.app). By creating an account or placing an order you agree
         to them.
@@ -46,10 +46,22 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Sutra Gold">
+        <LegalList
+          items={[
+            "Sutra Gold is free to join and to leave; email us to leave.",
+            "Your level follows what you spent on delivered orders in the last 12 months. Cancelled and returned orders don't count, and a level can go down as well as up.",
+            "Member prices, discount codes and festival prices don't combine: the one that saves you more applies.",
+            "We may change the levels or perks; the version on the Sutra Gold page applies to orders placed from then on.",
+          ]}
+        />
+      </LegalSection>
+
       <LegalSection title="Payment, delivery and returns">
         <LegalList
           items={[
-            "Payment is cash on delivery.",
+            "Pay in cash on delivery, or online by card or UPI through Sutra Pay. Sutra Pay is a demo: no real money is taken, and orders paid with it are marked as demo payments.",
+            "If an order paid online is cancelled, or a return is accepted, the payment is marked refunded.",
             "You can return any unworn piece within 7 days of delivery.",
           ]}
         />

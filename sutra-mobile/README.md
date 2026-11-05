@@ -48,6 +48,7 @@ using `max-md:` and `md:hidden`. If something looks wrong on a phone, look here
 | `app/checkout/page.tsx` | The pinned total and Place Order bar. |
 | `components/ChatWidget.tsx`, `CartDrawer.tsx`, `GoogleSignIn.tsx`, `app/account/page.tsx` | Small spacing and position fixes. |
 | `app/page.tsx` | Wraps the everyday hero, banner and offer strips in `data-fest-hide`, so phones swap them for the festival Home. |
+| `components/CircleParts.tsx` | `CircleHomeCard`, the Sutra Gold card on phone Home (`md:hidden`): placed after the offers strip in `app/HomeClient.tsx` and above "Shop by budget" in `festival/PhoneFestivalHome.tsx`. |
 
 ## The festival look
 

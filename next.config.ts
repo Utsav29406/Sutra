@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
     "/api/orders": ["./node_modules/pdfkit/**"],
     "/api/orders/[id]": ["./node_modules/pdfkit/**"],
     "/api/orders/[id]/invoice": ["./node_modules/pdfkit/**"],
+    // An online order's confirmation (with the invoice) is sent once it is paid.
+    "/api/payments/verify": ["./node_modules/pdfkit/**"],
+    "/api/payments/webhook": ["./node_modules/pdfkit/**"],
+    "/api/payments/sutrapay": ["./node_modules/pdfkit/**"],
   },
 
   /*
@@ -52,6 +56,11 @@ const nextConfig: NextConfig = {
    * list, so the moment is fixed here and inlined into both.
    */
   env: { SUTRA_BUILT_AT: String(Date.now()) },
+
+  // Sutra Circle was renamed Sutra Gold (2026-11-05); old links keep working.
+  async redirects() {
+    return [{ source: "/circle", destination: "/gold", permanent: true }];
+  },
 };
 
 export default nextConfig;

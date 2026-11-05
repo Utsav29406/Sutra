@@ -11,11 +11,16 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash varchar(100) NOT NULL,
   phone         varchar(20)  DEFAULT NULL,
   role          text         NOT NULL DEFAULT 'USER' CHECK (role IN ('USER', 'ADMIN')),
+  circle_joined_at timestamptz DEFAULT NULL,
   created_at    timestamptz  NOT NULL DEFAULT now(),
   updated_at    timestamptz  NOT NULL DEFAULT now(),
   CONSTRAINT uq_users_email UNIQUE (email),
   CONSTRAINT uq_users_phone UNIQUE (phone)
 );
+
+-- Sutra Circle membership (lib/circle.ts): when the account joined; NULL = not
+-- a member. Added after launch, so existing databases get it here too.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS circle_joined_at timestamptz DEFAULT NULL;
 
 -- PostgreSQL has no ON UPDATE CURRENT_TIMESTAMP; a trigger keeps updated_at.
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS trigger AS $$
@@ -44,8 +49,17 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_name  varchar(120)  DEFAULT NULL,
   phone          varchar(20)   DEFAULT NULL,
   status         text          NOT NULL DEFAULT 'Processing'
-                 CHECK (status IN ('Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested', 'Returned'))
+                 CHECK (status IN ('Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested', 'Returned')),
+  -- Online (Cashfree) orders only; NULL for Cash on Delivery.
+  payment_status text          DEFAULT NULL CHECK (payment_status IN ('pending', 'paid', 'refunded')),
+  payment_ref    varchar(64)   DEFAULT NULL,
+  paid_at        timestamptz   DEFAULT NULL
 );
+-- Online payment (2026-11-04), for databases made before it.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status text DEFAULT NULL
+  CHECK (payment_status IN ('pending', 'paid', 'refunded'));
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_ref varchar(64) DEFAULT NULL;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at timestamptz DEFAULT NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (email);
 CREATE INDEX IF NOT EXISTS idx_orders_placed_at ON orders (placed_at);
 

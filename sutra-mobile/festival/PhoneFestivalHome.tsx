@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CircleHomeCard } from "@/components/CircleParts";
 import { useState } from "react";
 import { Banknote, HandHeart, Truck } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
@@ -180,6 +181,8 @@ function FestivalHome({ festival }: { festival: Festival }) {
           </section>
         </>
       )}
+
+      <CircleHomeCard className="px-4 pt-6" />
 
       <section className="px-4 pt-6">
         <h2 className="mb-3 font-hero text-[23px] font-medium leading-tight">Shop by budget</h2>

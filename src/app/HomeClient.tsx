@@ -8,6 +8,7 @@ import OffersStrip from "@/components/OffersStrip";
 import FestivalBanner from "@/components/FestivalBanner";
 import FestivalEdit from "@/components/FestivalEdit";
 import PhoneFestivalHome from "@/sutra-mobile/festival/PhoneFestivalHome";
+import { CircleHomeCard } from "@/components/CircleParts";
 import { Embers, LampLine } from "@/components/DiwaliDecor";
 import ProductCard from "@/components/ProductCard";
 import HomeReviews from "@/components/HomeReviews";
@@ -29,6 +30,7 @@ export default function HomeClient() {
         <FestivalBanner />
         <PromiseRail />
         <OffersStrip />
+        <CircleHomeCard className="px-4 pt-6" />
         <FestivalEdit />
       </div>
       <PhoneFestivalHome />

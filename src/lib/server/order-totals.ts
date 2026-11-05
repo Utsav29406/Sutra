@@ -2,6 +2,7 @@ import "server-only";
 import type { Order } from "@/lib/order";
 import { products } from "@/lib/products";
 import { quote } from "@/lib/pricing";
+import type { Tier } from "@/lib/circle";
 
 /*
  * A checkout that loaded just before an offer ended may arrive just after.
@@ -48,7 +49,9 @@ export function checkItems(order: Order): string | null {
  */
 export function checkTotals(
   order: Order,
-  now: number = Date.now()
+  now: number = Date.now(),
+  /** The customer's Sutra Gold level, read from the database by the caller. */
+  member: Tier | null = null
 ): { discount: number; total: number; couponCode: string | null } | string {
   const lines = [];
   for (const item of order.items) {
@@ -65,7 +68,7 @@ export function checkTotals(
   const asked = order.couponCode ?? null;
   for (const at of [now, now - OFFER_GRACE_MS]) {
     // During a festival quote() applies its offer whatever code is sent.
-    const priced = quote(lines, asked, at);
+    const priced = quote(lines, asked, at, member);
     if (Math.abs(priced.total - order.total) <= 1 && Math.abs(priced.discount - (order.discount ?? 0)) <= 1) {
       const couponCode = priced.discount > 0 ? priced.offerCode : null;
       return { discount: priced.discount, total: priced.total, couponCode };

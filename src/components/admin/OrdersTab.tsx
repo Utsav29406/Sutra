@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/lib/store/auth";
 import { useStockStore } from "@/lib/store/stock";
 import { formatPrice } from "@/lib/utils";
-import { nextStatuses, restoresStock, STATUS_STYLES, type Order, type OrderStatus } from "@/lib/order";
+import { isDemoPayment, nextStatuses, paymentLabel, restoresStock, STATUS_STYLES, type Order, type OrderStatus } from "@/lib/order";
 import { offerLabel } from "@/lib/festival";
 
 const FILTERS: Array<"All" | OrderStatus> = [
@@ -115,6 +115,15 @@ export function OrdersTab({ orders }: { orders: Order[] }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">{formatPrice(order.total)}</span>
+                    {order.paymentMethod === "card" && (
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          order.paymentStatus === "paid" ? "bg-green-100 text-green-700" : order.paymentStatus === "refunded" ? "bg-purple-100 text-purple-700" : "bg-white/10 text-foreground/60"
+                        }`}
+                      >
+                        {order.paymentStatus === "paid" ? (isDemoPayment(order) ? "Paid · demo" : "Paid") : order.paymentStatus === "refunded" ? "Refunded" : "Unpaid"}
+                      </span>
+                    )}
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[order.status] ?? "bg-white/5"}`}>
                       {order.status}
                     </span>
@@ -146,7 +155,7 @@ export function OrdersTab({ orders }: { orders: Order[] }) {
                       </div>
                       <div>
                         <p className="text-xs uppercase tracking-[0.15em] text-foreground/45">Payment</p>
-                        <p className="mt-1.5 text-sm">{order.paymentMethod === "cod" ? "Cash on Delivery" : "Card / UPI"}</p>
+                        <p className="mt-1.5 text-sm">{paymentLabel(order)}</p>
                         {order.couponCode && (
                           <p className="mt-1 text-xs text-primary">
                             {offerLabel(order.couponCode)} · −{formatPrice(order.discount ?? 0)}

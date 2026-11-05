@@ -1,5 +1,6 @@
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/shipping";
-import { activeFestival, festivalPrice, type Festival } from "@/lib/festival";
+import { activeFestival, DAY_MS, festivalPrice, type Festival } from "@/lib/festival";
+import { circleCode, memberPrice, type Tier } from "@/lib/circle";
 
 /**
  * What an order costs: one calculation, run by checkout to show the total and
@@ -47,21 +48,46 @@ export type Quote = {
   offerCode: string | null;
   /** Set when a coupon was asked for and can't be used. */
   couponError: string | null;
+  /** The Sutra Gold level priced in, if the shopper is a member. */
+  member: Tier | null;
+  /** True when the member price is the saving applied. */
+  memberApplied: boolean;
 };
+
+/** The subtotal from which delivery is free for this shopper; 0 = always free. */
+export function freeDeliveryFrom(member: Tier | null): number {
+  if (!member) return FREE_SHIPPING_THRESHOLD;
+  return Math.min(member.freeDeliveryFrom, FREE_SHIPPING_THRESHOLD);
+}
 
 export function findCoupon(code: string): Coupon | null {
   const normalized = code.trim().toUpperCase();
   return COUPONS.find((c) => c.code === normalized) ?? null;
 }
 
-export function quote(lines: Line[], couponCode: string | null, now: number = Date.now()): Quote {
+/**
+ * One saving per order: a festival price (which takes no codes while it runs),
+ * otherwise the member price or a code, whichever saves more. `member` is the
+ * shopper's Sutra Gold level: the server reads it from the database, so a
+ * request can't claim one (lib/server/order-totals.ts).
+ */
+export function quote(lines: Line[], couponCode: string | null, now: number = Date.now(), member: Tier | null = null): Quote {
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
-  const festival = activeFestival(now);
+  const festival = activeFestival(now, member ? member.earlyDays * DAY_MS : 0);
+  // A member price comes back from checkout as its own offer code; it is not a coupon.
+  const asked = couponCode && !/^CIRCLE-/i.test(couponCode.trim()) ? couponCode : null;
 
   let discount = 0;
-  let freeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+  /*
+   * Free delivery qualifies on the subtotal, not on what is left after a
+   * discount. Testing the discounted figure meant a ₹3,200 basket with
+   * SUTRA10 fell to ₹2,880, lost its free delivery, and handed ₹149 of the
+   * discount straight back — which reads as the discount not working.
+   */
+  let freeShipping = subtotal >= FREE_SHIPPING_THRESHOLD || (!!member && subtotal >= member.freeDeliveryFrom);
   let offerCode: string | null = null;
   let couponError: string | null = null;
+  let memberApplied = false;
 
   if (festival) {
     // Worked out piece by piece, so the total matches the festival price shown
@@ -69,25 +95,34 @@ export function quote(lines: Line[], couponCode: string | null, now: number = Da
     discount = lines.reduce((sum, l) => sum + (l.price - festivalPrice(l.price, festival)) * l.quantity, 0);
     freeShipping ||= festival.freeShipping;
     offerCode = festival.id;
-    if (couponCode) couponError = `Codes can't be added to the ${festival.name} offer, which is already applied.`;
-  } else if (couponCode) {
-    const coupon = findCoupon(couponCode);
-    if (!coupon) couponError = "That code isn't one of ours.";
-    else if (coupon.minSpend && subtotal < coupon.minSpend) {
-      couponError = `Spend ₹${coupon.minSpend.toLocaleString("en-IN")} to use ${coupon.code}.`;
-    } else {
-      if (coupon.percentOff) {
-        discount = Math.round((subtotal * coupon.percentOff) / 100);
-        if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
+    if (asked) couponError = `Codes can't be added to the ${festival.name} offer, which is already applied.`;
+  } else {
+    const memberDiscount = member?.percentOff
+      ? lines.reduce((sum, l) => sum + (l.price - memberPrice(l.price, member)) * l.quantity, 0)
+      : 0;
+    let couponDiscount = 0;
+    let coupon: Coupon | null = null;
+    if (asked) {
+      coupon = findCoupon(asked);
+      if (!coupon) couponError = "That code isn't one of ours.";
+      else if (coupon.minSpend && subtotal < coupon.minSpend) {
+        couponError = `Spend ₹${coupon.minSpend.toLocaleString("en-IN")} to use ${coupon.code}.`;
+        coupon = null;
+      } else if (coupon.percentOff) {
+        couponDiscount = Math.round((subtotal * coupon.percentOff) / 100);
+        if (coupon.maxDiscount) couponDiscount = Math.min(couponDiscount, coupon.maxDiscount);
       } else if (coupon.amountOff) {
-        discount = coupon.amountOff;
+        couponDiscount = coupon.amountOff;
       }
-      /*
-       * Free delivery qualifies on the subtotal, not on what is left after a
-       * coupon. Testing the discounted figure meant a ₹3,200 basket with
-       * SUTRA10 fell to ₹2,880, lost its free delivery, and handed ₹149 of the
-       * discount straight back — which reads as the discount not working.
-       */
+    }
+
+    if (member && memberDiscount > 0 && memberDiscount >= couponDiscount) {
+      discount = memberDiscount;
+      offerCode = circleCode(member);
+      memberApplied = true;
+      if (coupon) couponError = `Your ${member.name} member price saves more than ${coupon.code}, so it stays applied.`;
+    } else if (coupon) {
+      discount = couponDiscount;
       freeShipping ||= !!coupon.freeShipping;
       offerCode = coupon.code;
     }
@@ -95,5 +130,15 @@ export function quote(lines: Line[], couponCode: string | null, now: number = Da
 
   discount = Math.min(discount, subtotal);
   const shipping = subtotal === 0 || freeShipping ? 0 : SHIPPING_FEE;
-  return { subtotal, discount, shipping, total: subtotal - discount + shipping, festival, offerCode, couponError };
+  return {
+    subtotal,
+    discount,
+    shipping,
+    total: subtotal - discount + shipping,
+    festival,
+    offerCode,
+    couponError,
+    member,
+    memberApplied,
+  };
 }

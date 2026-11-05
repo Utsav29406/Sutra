@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  */
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="4 November 2026">
+    <LegalPage title="Privacy Policy" updated="5 November 2026">
       <p>
         This explains what Sutra (wearsutra.vercel.app) collects when you use it, why, and what you can ask us to do
         with it. We collect only what is needed to run your account and your orders, and we never sell it.
@@ -26,7 +26,8 @@ export default function PrivacyPage() {
           items={[
             <><strong className="text-foreground">Your account:</strong> name, email address and, if you give it, your mobile number. Your password is stored only as a one-way bcrypt hash, never as the password itself.</>,
             <><strong className="text-foreground">Sign in with Google:</strong> your name and email address from Google, and nothing else. We do not see your Google password, contacts or any other Google data.</>,
-            <><strong className="text-foreground">Your orders:</strong> the name, phone number and delivery address you enter at checkout, the pieces, sizes and prices, and the order status. Payment is cash on delivery, so we never handle card or bank details.</>,
+            <><strong className="text-foreground">Your orders:</strong> the name, phone number and delivery address you enter at checkout, the pieces, sizes and prices, and the order status. Online payment is currently a demo (Sutra Pay) and takes no money. Card details you type there are checked and thrown away; we keep only the card type and its last four digits, or that you paid by UPI.</>,
+            <><strong className="text-foreground">Sutra Gold:</strong> whether and when you joined. Your level is worked out from your own delivered orders, so joining collects nothing else.</>,
             <><strong className="text-foreground">Reviews:</strong> the name, rating and text you post, which are shown publicly on the product page.</>,
             <><strong className="text-foreground">Password reset:</strong> a one-time code, stored only in hashed form and only until it expires, plus a count of wrong attempts so the code cannot be guessed.</>,
           ]}

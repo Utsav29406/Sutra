@@ -1,6 +1,6 @@
 import "server-only";
 import PDFDocument from "pdfkit";
-import type { Order } from "@/lib/order";
+import { paymentLabel, type Order } from "@/lib/order";
 import { offerLabel } from "@/lib/festival";
 
 /**
@@ -107,7 +107,7 @@ export function renderInvoice(order: Order): Promise<Buffer> {
 
     const details = [
       `Date: ${formatDate(order.placedAt)}`,
-      `Payment: ${order.paymentMethod === "cod" ? "Cash on Delivery" : "Card / UPI"}`,
+      `Payment: ${paymentLabel(order)}`,
       `Status: ${order.status}`,
       ...(order.couponCode ? [offerLabel(order.couponCode).replace(/^Coupon /, "Coupon: ")] : []),
     ];

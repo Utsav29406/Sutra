@@ -53,6 +53,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link className="sutra-underline hover:text-primary" href="/gold">
+                Sutra Gold
+              </Link>
+            </li>
+            <li>
               <Link className="sutra-underline hover:text-primary" href="/account">
                 My Account
               </Link>
