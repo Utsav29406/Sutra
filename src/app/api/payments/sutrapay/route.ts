@@ -3,7 +3,7 @@ import { getSession } from "@/lib/server/session";
 import { getOrder } from "@/lib/server/orders";
 import { paymentProvider } from "@/lib/server/cashfree";
 import { settleSutraPay } from "@/lib/server/payments";
-import { cardBrand, cardDeclined, cardProblem, digits, TEST, upiDeclined, upiValid } from "@/lib/sutrapay";
+import { cardBrand, cardDeclined, cardProblem, digits, TEST, UPI_APPS, upiDeclined, upiValid } from "@/lib/sutrapay";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,13 +54,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, paid: false, error: "Your bank declined this card. No money was taken." });
     }
     ref = `SPAY-CARD-${(cardBrand(card.number) ?? "CARD").toUpperCase()}-${digits(card.number).slice(-4)}-${stamp}`;
-  } else if (body?.method === "upi" && body.upi?.qr === true) {
-    // Scanned QR: in the demo, "I've paid" stands for the app confirming, and
-    // "simulate a failed payment" for the shopper giving up in the app.
+  } else if (body?.method === "upi" && (body.upi?.qr === true || UPI_APPS.some((a) => a.id === body.upi?.app))) {
+    // Scanned QR (laptop) or a hand-off to a UPI app (phone): in the demo,
+    // "I've paid" stands for the app confirming, and "simulate a failed
+    // payment" for the shopper giving up in the app.
     if (body.upi.simulate === "decline") {
       return NextResponse.json({ ok: true, paid: false, error: "The payment was not completed in the UPI app. No money was taken." });
     }
-    ref = `SPAY-UPI-QR-${stamp}`;
+    ref = body.upi.qr === true ? `SPAY-UPI-QR-${stamp}` : `SPAY-UPI-APP-${stamp}`;
   } else if (body?.method === "upi") {
     const vpa = String(body.upi?.vpa ?? "").trim().toLowerCase();
     if (!upiValid(vpa)) return NextResponse.json({ ok: false, error: "Check the UPI ID." }, { status: 400 });

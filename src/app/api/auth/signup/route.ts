@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rejectNonJson } from "@/lib/server/json-only";
 import { signUp } from "@/lib/server/users";
 import { setSessionCookie } from "@/lib/server/session";
 import { CAPTCHA_ERROR, clientIp, verifyTurnstile } from "@/lib/server/turnstile";
@@ -6,6 +7,8 @@ import { CAPTCHA_ERROR, clientIp, verifyTurnstile } from "@/lib/server/turnstile
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const notJson = rejectNonJson(req);
+  if (notJson) return notJson;
   const body = await req.json().catch(() => null);
   const { name, email, password, phone, captcha, joinCircle } = body ?? {};
 

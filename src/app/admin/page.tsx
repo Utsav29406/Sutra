@@ -39,7 +39,9 @@ export default function AdminPage() {
   const stats = useMemo(() => {
     const revenue = orders.filter(countsAsRevenue).reduce((sum, o) => sum + o.total, 0);
     const stock = products.reduce((sum, p) => sum + Math.max(0, p.stock - (consumed[p.id] ?? 0)), 0);
-    const openOrders = orders.filter((o) => o.status === "Processing" || o.status === "Return Requested").length;
+    const openOrders = orders.filter(
+      (o) => o.paymentStatus !== "pending" && (o.status === "Processing" || o.status === "Return Requested")
+    ).length;
     return { revenue, stock, openOrders };
   }, [orders, consumed]);
 

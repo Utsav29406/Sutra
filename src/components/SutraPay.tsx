@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import qrcode from "qrcode-generator";
 import { AnimatePresence, m as motion } from "framer-motion";
-import { AtSign, Check, CreditCard, Loader2, Lock, QrCode, ShieldCheck, Smartphone, X, XCircle } from "lucide-react";
+import { AppWindow, AtSign, Check, ChevronRight, CreditCard, Loader2, Lock, QrCode, ShieldCheck, Smartphone, X, XCircle } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import type { Order } from "@/lib/order";
 import {
@@ -14,22 +14,27 @@ import {
   formatExpiry,
   QR_PAYEE,
   TEST,
+  UPI_APPS,
   upiPayLink,
   upiValid,
   type SutraPayMethod,
+  type UpiAppId,
 } from "@/lib/sutrapay";
 
 /*
  * The Sutra Pay window: the shop's own dummy gateway (rules in lib/sutrapay).
- * Card goes through a bank OTP step; UPI is a QR code to scan or a UPI ID that
- * gets an "approve in your app" request, as real gateways do. The server
+ * Card goes through a bank OTP step. UPI, as real gateways do it: on a laptop
+ * a QR code to scan with the phone; on a phone (which can't scan its own
+ * screen) a hand-off to a UPI app; on both, a UPI ID that gets an "approve in
+ * your app" request. The demo never opens a real app (the payee is made up);
+ * a short "opening…" screen stands in for the hand-off. The server
  * (api/payments/sutrapay) decides every outcome.
  */
 
 /** The paid order comes back with a success, as the server saved it. */
 export type PayOutcome = { paid: boolean; error?: string; order?: Order };
 
-type Stage = "details" | "otp" | "approve" | "processing" | "success" | "declined";
+type Stage = "details" | "otp" | "opening" | "approve" | "processing" | "success" | "declined";
 
 const field =
   "w-full rounded-lg border border-white/12 bg-white/[0.04] px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-foreground/30 focus:border-accent-light/70";
@@ -99,18 +104,27 @@ export function SutraPay({
   const [card, setCard] = useState({ number: "", expiry: "", cvv: "", name: "" });
   const [otp, setOtp] = useState("");
   const [vpa, setVpa] = useState("");
-  // UPI: scan a QR (opens first on larger screens) or type a UPI ID (phones,
-  // where the QR is on the same screen as the app that would scan it).
-  const [upiMode, setUpiMode] = useState<"qr" | "id">("qr");
+  // UPI: scan a QR (laptops/tablets) or pay in a UPI app (phones, where a QR
+  // would be on the same screen as the app that has to scan it), or a UPI ID.
+  const [isPhone, setIsPhone] = useState(false);
+  const [upiMode, setUpiMode] = useState<"qr" | "app" | "id">("qr");
+  const [upiApp, setUpiApp] = useState<UpiAppId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wait, setWait] = useState(UPI_WAIT_S);
   const lastError = useRef<string | undefined>(undefined);
 
-  // A fresh window for every order.
+  // A fresh window for every order. Closing it parks the stage too, so a
+  // countdown left running behind a closed window can't fire later.
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId) {
+      setStage("details");
+      return;
+    }
     setMethod(start);
-    setUpiMode(window.matchMedia("(min-width: 768px)").matches ? "qr" : "id");
+    const phone = !window.matchMedia("(min-width: 768px)").matches;
+    setIsPhone(phone);
+    setUpiMode(phone ? "app" : "qr");
+    setUpiApp(null);
     setStage("details");
     setCard({ number: "", expiry: "", cvv: "", name: "" });
     setOtp("");
@@ -139,16 +153,26 @@ export function SutraPay({
 
   // UPI: the request waits in the shopper's app; here it is approved after a
   // few seconds, or straight away with "I've approved".
+  // The count lives in the effect, not read back from state: reading `wait`
+  // let the previous attempt's 0 fire the payment the moment a new approve
+  // screen opened, skipping it.
+  const approveBody = () => ({ method: "upi", upi: upiApp ? { app: upiApp } : { vpa } });
+  const autoApprove = useRef<() => void>(() => {});
+  autoApprove.current = () => finish(approveBody());
   useEffect(() => {
     if (stage !== "approve") return;
-    setWait(UPI_WAIT_S);
-    const timer = window.setInterval(() => setWait((s) => s - 1), 1000);
+    let left = UPI_WAIT_S;
+    setWait(left);
+    const timer = window.setInterval(() => {
+      left -= 1;
+      setWait(left);
+      if (left <= 0) {
+        window.clearInterval(timer);
+        autoApprove.current();
+      }
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [stage]);
-  useEffect(() => {
-    if (stage === "approve" && wait <= 0) finish({ method: "upi", upi: { vpa } });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wait, stage]);
 
   function continueCard(e: React.FormEvent) {
     e.preventDefault();
@@ -164,12 +188,71 @@ export function SutraPay({
     e.preventDefault();
     if (!upiValid(vpa)) return setError("Enter a UPI ID like name@bank.");
     setError(null);
+    setUpiApp(null);
     setStage("approve");
   }
+
+  // Phone: "open" the chosen app, then wait for the shopper to pay there.
+  function openUpiApp(app: UpiAppId) {
+    setError(null);
+    setUpiApp(app);
+    setStage("opening");
+  }
+  useEffect(() => {
+    if (stage !== "opening") return;
+    const timer = window.setTimeout(() => setStage("approve"), 1400);
+    return () => window.clearTimeout(timer);
+  }, [stage]);
+  const appName = UPI_APPS.find((a) => a.id === upiApp)?.name ?? "your UPI app";
 
   const brand = cardBrand(card.number);
   const cancel = () => onDone({ paid: false, error: "Payment cancelled. Your bag is still here." });
   const busy = stage === "processing" || stage === "success";
+
+  // A dialog for keyboards too (as the bag drawer): focus moves in and stays
+  // in, Escape cancels unless a payment is being processed, and focus goes
+  // back to the Pay button afterwards.
+  const panel = useRef<HTMLDivElement>(null);
+  const escape = useRef<() => void>(() => {});
+  escape.current = () => {
+    if (!busy) cancel();
+  };
+  useEffect(() => {
+    if (!orderId) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      [...(panel.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])') ?? [])];
+    const raf = requestAnimationFrame(() => {
+      if (!panel.current?.contains(document.activeElement)) focusables()[0]?.focus();
+    });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        escape.current();
+      } else if (e.key === "Tab") {
+        const list = focusables();
+        if (!list.length) return;
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        } else if (!panel.current?.contains(document.activeElement)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", onKey);
+      opener?.focus?.();
+    };
+  }, [orderId]);
 
   return (
     <AnimatePresence>
@@ -184,6 +267,7 @@ export function SutraPay({
           aria-label="Sutra Pay"
         >
           <motion.div
+            ref={panel}
             initial={{ y: 30, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 30, opacity: 0 }}
@@ -324,9 +408,11 @@ export function SutraPay({
                       <div className="grid grid-cols-2 gap-1 rounded-lg bg-white/[0.05] p-1 text-xs font-medium" role="tablist" aria-label="UPI">
                         {(
                           [
-                            { id: "qr", label: "Scan QR", icon: QrCode },
-                            { id: "id", label: "UPI ID", icon: AtSign },
-                          ] as const
+                            isPhone
+                              ? ({ id: "app", label: "UPI app", icon: AppWindow } as const)
+                              : ({ id: "qr", label: "Scan QR", icon: QrCode } as const),
+                            { id: "id", label: "UPI ID", icon: AtSign } as const,
+                          ]
                         ).map((m) => (
                           <button
                             key={m.id}
@@ -347,7 +433,31 @@ export function SutraPay({
                         ))}
                       </div>
 
-                      {upiMode === "qr" ? (
+                      {upiMode === "app" ? (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm">
+                            Pay <b>{formatPrice(amount)}</b> in a UPI app on this phone
+                          </p>
+                          <ul className="flex flex-col gap-1.5" aria-label="UPI apps">
+                            {UPI_APPS.map((a) => (
+                              <li key={a.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => openUpiApp(a.id)}
+                                  className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3 text-left text-sm transition hover:border-accent-light/60"
+                                >
+                                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.08] text-xs font-bold text-accent-light" aria-hidden="true">
+                                    {a.id === "other" ? <Smartphone size={15} /> : a.name.charAt(0)}
+                                  </span>
+                                  <span className="flex-1 font-medium">{a.name}</span>
+                                  <ChevronRight size={16} className="text-foreground/40" aria-hidden="true" />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-[11px] text-foreground/45">Demo: no app really opens; the next screen stands in for it.</p>
+                        </div>
+                      ) : upiMode === "qr" ? (
                         <div className="flex flex-col items-center gap-3 text-center">
                           <div className="rounded-xl border border-white/10 bg-white p-2.5 shadow-lg">
                             <UpiQr value={upiPayLink(orderId, amount)} />
@@ -466,22 +576,50 @@ export function SutraPay({
                     <span className="absolute inset-0 animate-ping rounded-full bg-accent/20" aria-hidden="true" />
                     <Smartphone size={30} className="text-accent-light" aria-hidden="true" />
                   </span>
-                  <p className="font-medium">Approve the request in your UPI app</p>
-                  <p className="text-sm text-foreground/60">
-                    Sent to <b className="font-mono text-foreground/85">{vpa}</b> for {formatPrice(amount)}. Waiting… {Math.max(wait, 0)}s
-                  </p>
-                  <div className="mt-2 flex gap-3">
+                  {upiApp ? (
+                    <>
+                      <p className="font-medium">Complete the payment in {appName}</p>
+                      <p className="text-sm text-foreground/60">
+                        {formatPrice(amount)} to Sutra. Come back here when it&apos;s done. Waiting… {Math.max(wait, 0)}s
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium">Approve the request in your UPI app</p>
+                      <p className="text-sm text-foreground/60">
+                        Sent to <b className="font-mono text-foreground/85">{vpa}</b> for {formatPrice(amount)}. Waiting… {Math.max(wait, 0)}s
+                      </p>
+                    </>
+                  )}
+                  <div className="mt-2 flex flex-wrap justify-center gap-3">
                     <button
                       type="button"
-                      onClick={() => finish({ method: "upi", upi: { vpa } })}
+                      onClick={() => finish(approveBody())}
                       className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark"
                     >
-                      I&apos;ve approved
+                      {upiApp ? "I've paid" : "I've approved"}
                     </button>
                     <button type="button" onClick={() => setStage("details")} className="rounded-xl border border-white/15 px-5 py-2.5 text-sm">
-                      Change UPI ID
+                      {upiApp ? "Choose another app" : "Change UPI ID"}
                     </button>
                   </div>
+                  {upiApp && (
+                    <button
+                      type="button"
+                      onClick={() => finish({ method: "upi", upi: { app: upiApp, simulate: "decline" } })}
+                      className="text-[11px] text-foreground/45 underline underline-offset-2 hover:text-foreground/70"
+                    >
+                      Simulate a failed payment
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {stage === "opening" && (
+                <div className="flex flex-col items-center gap-3 py-8 text-center" aria-live="polite">
+                  <Loader2 size={34} className="animate-spin text-accent-light" aria-hidden="true" />
+                  <p className="font-medium">Opening {appName}…</p>
+                  <p className="text-sm text-foreground/55">Pay {formatPrice(amount)} there, then come back to Sutra.</p>
                 </div>
               )}
 

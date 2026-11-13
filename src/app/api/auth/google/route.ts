@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rejectNonJson } from "@/lib/server/json-only";
 import { googleClientId, verifyGoogleIdToken } from "@/lib/server/google";
 import { signInWithGoogle } from "@/lib/server/users";
 import { setSessionCookie } from "@/lib/server/session";
@@ -8,6 +9,8 @@ export const runtime = "nodejs";
 
 /** Turns a Google ID token from the button or One Tap into a Sutra session. */
 export async function POST(req: NextRequest) {
+  const notJson = rejectNonJson(req);
+  if (notJson) return notJson;
   if (!googleClientId) {
     return NextResponse.json({ ok: false, error: "Google sign-in is not available." }, { status: 503 });
   }

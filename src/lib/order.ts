@@ -114,7 +114,3 @@ export function nextStatuses(order: Order): OrderStatus[] {
       return [];
   }
 }
-
-export function restoresStock(status: OrderStatus): boolean {
-  return status === "Cancelled" || status === "Returned";
-}

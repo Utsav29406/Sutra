@@ -62,7 +62,10 @@ function indexOf(p: Product) {
 /** How well a piece matches the query; 0 when some word matches nothing. */
 export function searchScore(p: Product, query: string) {
   const typed = words(query);
-  if (typed.length === 0) return 1;
+  // Nothing typed matches everything; something typed that has no searchable
+  // words (another script, only symbols) matches nothing - it used to match
+  // the whole catalogue.
+  if (typed.length === 0) return query.trim() ? 0 : 1;
   const index = indexOf(p);
   let score = 0;
   for (const word of typed) {
@@ -79,7 +82,8 @@ export function searchScore(p: Product, query: string) {
 
 /** Matching pieces, best match first; ties keep the catalogue's own order. */
 export function searchProducts(list: Product[], query: string) {
-  if (words(query).length === 0) return list;
+  if (!query.trim()) return list;
+  if (words(query).length === 0) return [];
   return list
     .map((p, i) => ({ p, i, score: searchScore(p, query) }))
     .filter((r) => r.score > 0)

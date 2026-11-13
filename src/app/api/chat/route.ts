@@ -26,6 +26,7 @@ const DEADLINE_MS = 25_000;
 const MAX_TOOL_ROUNDS = 4;
 const MAX_TURNS = 20;
 const MAX_CHARS = 2000;
+const MAX_TOTAL_CHARS = 8000;
 
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 12;
@@ -108,6 +109,18 @@ function trimContext(raw: unknown): ChatContext {
 }
 
 export async function POST(req: Request) {
+  // Only from Sutra's own pages: a browser always sends Origin on a POST, so
+  // another website can't put our assistant (and our Gemini quota) behind its
+  // own chat box.
+  const origin = req.headers.get("origin");
+  if (origin) {
+    let sameHost = false;
+    try {
+      sameHost = new URL(origin).host === new URL(req.url).host || new URL(origin).host === req.headers.get("host");
+    } catch {}
+    if (!sameHost) return Response.json({ error: "Not available here." }, { status: 403 });
+  }
+
   // Pasted/piped env values can carry a BOM or stray whitespace.
   const apiKey = process.env.GEMINI_API_KEY?.replace(/^﻿/, "").trim();
   if (!apiKey) {
@@ -140,7 +153,17 @@ export async function POST(req: Request) {
     return Response.json({ error: "Malformed request." }, { status: 400 });
   }
 
-  const turns = parseTurns(body.messages);
+  // Newest turns first, up to MAX_TOTAL_CHARS of conversation: 20 turns of
+  // 2,000 characters each went to the model on every round.
+  const parsed = parseTurns(body.messages);
+  const turns: typeof parsed = [];
+  let budget = MAX_TOTAL_CHARS;
+  for (let i = parsed.length - 1; i >= 0 && parsed[i].content.length <= budget; i--) {
+    budget -= parsed[i].content.length;
+    turns.unshift(parsed[i]);
+  }
+  // A history must start with the shopper speaking.
+  while (turns.length && turns[0].role === "assistant") turns.shift();
   if (!turns.length) {
     return Response.json({ error: "No message to answer." }, { status: 400 });
   }

@@ -24,7 +24,11 @@ export function OrderTimeline({ order }: { order: Order }) {
           <p className="text-sm font-medium">{order.status}</p>
           <p className="text-xs text-foreground/55">
             {order.status === "Cancelled"
-              ? "This order was cancelled and nothing was charged."
+              ? order.paymentStatus === "refunded"
+                ? "This order was cancelled and refunded in full."
+                : order.paymentStatus === "paid"
+                  ? "This order was cancelled. The refund is being arranged."
+                  : "This order was cancelled and nothing was charged."
               : "This order has been sent back."}
             {formatShortDate(order.updatedAt) && ` · ${formatShortDate(order.updatedAt)}`}
           </p>

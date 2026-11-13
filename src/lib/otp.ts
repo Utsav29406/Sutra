@@ -272,7 +272,14 @@ export async function verifyChallenge(
     // The reset form checks the right code twice (to move on, then to save the
     // password). Give back the slot this check took, so someone who needed
     // four tries is not locked out of saving their new password.
-    await mutate("UPDATE otp_challenges SET attempts = GREATEST(attempts - 1, 0) WHERE id = $1", [id]);
+    // It also gets ten more minutes: the two-minute window is for typing the
+    // code, not for choosing and confirming a new password as well.
+    await mutate(
+      `UPDATE otp_challenges SET attempts = GREATEST(attempts - 1, 0),
+              expires_at = GREATEST(expires_at, now() + interval '10 minutes')
+        WHERE id = $1`,
+      [id]
+    );
   }
 
   return { ok: true, identifier: row.identifier };

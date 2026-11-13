@@ -13,6 +13,7 @@ export async function getCircle(email: string): Promise<CircleStatus | null> {
     `SELECT u.circle_joined_at AS joined_at,
             COALESCE((SELECT SUM(o.total) FROM orders o
                        WHERE o.email = u.email AND o.status = 'Delivered'
+                         AND o.payment_status IS DISTINCT FROM 'pending'
                          AND o.placed_at > now() - interval '365 days'), 0)::float8 AS spend
        FROM users u WHERE u.email = $1 LIMIT 1`,
     [normalizeEmail(email)]

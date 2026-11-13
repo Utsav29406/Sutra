@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrder, markOrderRefunded, setOrderStatus } from "@/lib/server/orders";
+import { deleteUnpaidOrder, getOrder, markOrderRefunded, setOrderStatus } from "@/lib/server/orders";
 import { cashfreeEnabled, refundCashfreeOrder } from "@/lib/server/cashfree";
 import { sendOrderStatusUpdate } from "@/lib/server/email";
 import { getSession } from "@/lib/server/session";
-import { canCancel, canRequestReturn, isDemoPayment, type Order, type OrderStatus } from "@/lib/order";
+import { canCancel, canRequestReturn, isDemoPayment, nextStatuses, type Order, type OrderStatus } from "@/lib/order";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,9 +44,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   try {
-    let from: OrderStatus | undefined;
+    const existing = await getOrder(id);
     if (session.role !== "ADMIN") {
-      const existing = await getOrder(id);
       // Someone else's order answers exactly like a missing one, so the endpoint
       // cannot be used to discover which order ids exist.
       if (!existing || existing.email !== session.email) {
@@ -58,17 +57,31 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
           { status: 403 }
         );
       }
-      from = existing.status;
+    } else {
+      if (!existing) return NextResponse.json({ ok: false, error: "No such order." }, { status: 404 });
+      // The admin follows the same steps as the order list's buttons, checked
+      // against where the order is now - not where a tab opened an hour ago
+      // thought it was. Without this a stale tab could ship an order the
+      // customer had just cancelled (and been refunded for).
+      if (!nextStatuses(existing).includes(status)) {
+        return NextResponse.json(
+          { ok: false, error: `This order is ${existing.status} now, so it can't be marked ${status}. Refresh to see it.` },
+          { status: 409 }
+        );
+      }
+      // An online order whose payment never came through is not a sale.
+      if (existing.paymentStatus === "pending" && status !== "Cancelled") {
+        return NextResponse.json({ ok: false, error: "This order hasn't been paid yet." }, { status: 409 });
+      }
     }
 
-    let order = await setOrderStatus(id, status, from);
+    // Conditional on the status just checked, so a change in between loses.
+    let order = await setOrderStatus(id, status, existing.status);
     if (!order) {
-      return from
-        ? NextResponse.json(
-            { ok: false, error: "This order has just been updated. Refresh the page to see where it is." },
-            { status: 409 }
-          )
-        : NextResponse.json({ ok: false, error: "No such order." }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "This order has just been updated. Refresh the page to see where it is." },
+        { status: 409 }
+      );
     }
 
     // A paid online order that is cancelled or comes back is refunded in full,
@@ -99,5 +112,30 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       { ok: false, error: "Could not update that order." },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Drops the shopper's own online order whose payment window was closed or
+ * failed, so abandoned attempts don't pile up as unpaid orders. Only ever an
+ * order that is still unpaid; a paid one is untouched.
+ */
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ ok: false, error: "Please sign in first." }, { status: 401 });
+  const { id } = await ctx.params;
+  try {
+    const existing = await getOrder(id);
+    if (!existing || existing.email !== session.email) {
+      return NextResponse.json({ ok: false, error: "No such order." }, { status: 404 });
+    }
+    if (existing.paymentStatus !== "pending") {
+      return NextResponse.json({ ok: false, error: "Only an unpaid order can be removed." }, { status: 409 });
+    }
+    await deleteUnpaidOrder(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[orders DELETE]", error);
+    return NextResponse.json({ ok: false, error: "Could not remove that order." }, { status: 500 });
   }
 }

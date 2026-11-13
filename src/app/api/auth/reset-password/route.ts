@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rejectNonJson } from "@/lib/server/json-only";
 import { resetPassword } from "@/lib/server/users";
 import { verifyChallenge } from "@/lib/otp";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const notJson = rejectNonJson(req);
+  if (notJson) return notJson;
   const body = await req.json().catch(() => null);
   const { challenge, code, password } = body ?? {};
 

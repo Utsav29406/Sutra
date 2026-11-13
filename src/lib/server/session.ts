@@ -122,7 +122,7 @@ interface AccountRow {
  * once instead of when the cookie expires up to 30 days later. Name and role
  * come from the database, not from the cookie.
  */
-export async function getSession(): Promise<SessionUser | null> {
+export async function getSession(options: { throwOnDbError?: boolean } = {}): Promise<SessionUser | null> {
   const store = await cookies();
   const claimed = decode(store.get(SESSION_COOKIE)?.value);
   if (!claimed) return null;
@@ -135,6 +135,7 @@ export async function getSession(): Promise<SessionUser | null> {
     );
   } catch (error) {
     console.error("[session] account lookup failed", error);
+    if (options.throwOnDbError) throw error;
     return null;
   }
   if (!row || !safeEqual(claimed.version, sessionVersion(row.password_hash))) return null;

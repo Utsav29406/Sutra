@@ -8,7 +8,6 @@ import { CreditCard, IndianRupee, QrCode, ShoppingBag, Tag, X } from "lucide-rea
 import toast from "react-hot-toast";
 import { useCartStore } from "@/lib/store/cart";
 import { useAuthStore } from "@/lib/store/auth";
-import { useStockStore } from "@/lib/store/stock";
 import { useHydrated } from "@/lib/useHydrated";
 import { formatPrice } from "@/lib/utils";
 import type { Order } from "@/lib/order";
@@ -31,7 +30,6 @@ export default function CheckoutPage() {
   const user = useAuthStore((s) => s.user);
   const authLoaded = useAuthStore((s) => s.loaded);
   const addOrder = useAuthStore((s) => s.addOrder);
-  const consume = useStockStore((s) => s.consume);
   const rememberOrder = useAuthStore((s) => s.rememberOrder);
   const hydrated = useHydrated();
 
@@ -182,6 +180,13 @@ export default function CheckoutPage() {
         payment = await verifyPayment(order.id);
       }
       if (!payment.paid) {
+        // Sutra Pay answers at once, so an unpaid order here was abandoned or
+        // declined: drop it, or every retry would leave another unpaid order
+        // behind for the shop. (Not for Cashfree, where a slow UPI payment
+        // can still be on its way.)
+        if (result.payment.provider === "sutrapay") {
+          void fetch(`/api/orders/${encodeURIComponent(order.id)}`, { method: "DELETE" }).catch(() => undefined);
+        }
         setPlacing(false);
         toast.error(payment.error ?? "Payment not completed. Your bag is still here: try again, or choose Cash on Delivery.", {
           duration: 6000,
@@ -193,7 +198,6 @@ export default function CheckoutPage() {
       rememberOrder(payment.order ?? { ...order, paymentStatus: "paid" });
     }
 
-    consume(items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
     clearCart();
     toast.success(`Order ${order.id} placed. Dhanyavaad!`);
     router.push(`/order/${order.id}`);
@@ -249,7 +253,13 @@ export default function CheckoutPage() {
                   icon: QrCode,
                   title: "UPI",
                   desc: online?.enabled
-                    ? "Scan a QR code or enter your UPI ID. GPay, PhonePe, Paytm and more."
+                    ? (
+                        // Phones pay in a UPI app on the same phone; laptops scan a QR.
+                        <>
+                          <span className="md:hidden">Pay in GPay, PhonePe, Paytm or any UPI app, or enter your UPI ID.</span>
+                          <span className="max-md:hidden">Scan a QR code or enter your UPI ID. GPay, PhonePe, Paytm and more.</span>
+                        </>
+                      )
                     : online
                       ? "Coming soon. Cash on Delivery for now."
                       : "Checking…",
@@ -296,7 +306,14 @@ export default function CheckoutPage() {
                         {online?.mode === "demo" ? (
                           <>
                             Sutra Pay demo: no real money is taken.{" "}
-                            {opt.value === "upi" ? "Scan the QR or use a test UPI ID in the payment window." : "Test cards are in the payment window."}
+                            {opt.value === "upi" ? (
+                              <>
+                                <span className="md:hidden">Pick any UPI app or use a test UPI ID in the payment window.</span>
+                                <span className="max-md:hidden">Scan the QR or use a test UPI ID in the payment window.</span>
+                              </>
+                            ) : (
+                              "Test cards are in the payment window."
+                            )}
                           </>
                         ) : (
                           <>

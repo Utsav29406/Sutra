@@ -1,4 +1,5 @@
 import { products, getProductBySlug } from "@/lib/products";
+import { searchProducts } from "@/lib/search";
 import type { Product } from "@/lib/products";
 import type { ChatContext } from "@/lib/chat/catalogue";
 import { paymentLabel } from "@/lib/order";
@@ -139,24 +140,15 @@ export function runTool(
       const maxPrice = num(input, "maxPrice");
       const minPrice = num(input, "minPrice");
 
-      const terms = query ? query.split(/\s+/).filter(Boolean) : [];
-      let found = products.filter((p) => {
+      const inRange = products.filter((p) => {
         if (category && p.category.slug !== category) return false;
         if (maxPrice !== undefined && p.price > maxPrice) return false;
         if (minPrice !== undefined && p.price < minPrice) return false;
-        if (!terms.length) return true;
-        const hay = [
-          p.name,
-          p.fabric,
-          p.craftName ?? "",
-          p.state ?? "",
-          p.description,
-          p.category.name,
-        ]
-          .join(" ")
-          .toLowerCase();
-        return terms.some((t) => hay.includes(t));
+        return true;
       });
+      // The site's own search (whole words, every word): matching any word
+      // anywhere let "men" find every women's piece, and "red" "embroidered".
+      let found = query ? searchProducts(inRange, query) : inRange;
 
       found = found.slice(0, 6);
       if (!found.length) {

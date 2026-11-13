@@ -2,6 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { products } from "@/lib/products";
 
+/*
+ * Stock is the catalogue's figure, the same one the server checks orders
+ * against. This store used to subtract each purchase in the buyer's own
+ * browser only, so that browser alone showed pieces as sold out (forever)
+ * while everyone else - and the server - still sold them, and a cancel only
+ * "gave stock back" in whichever browser clicked it. Nothing subtracts now,
+ * and version 2 drops the counts old visits left behind.
+ */
+
 interface StockItem {
   productId: string;
   quantity: number;
@@ -51,6 +60,6 @@ export const useStockStore = create<StockState>()(
       },
       reset: () => set({ consumed: {} }),
     }),
-    { name: "sutra-stock" }
+    { name: "sutra-stock", version: 2, migrate: () => ({ consumed: {} }) }
   )
 );

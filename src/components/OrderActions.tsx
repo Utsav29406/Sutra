@@ -4,12 +4,10 @@ import { useState } from "react";
 import { Ban, RotateCcw } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/lib/store/auth";
-import { useStockStore } from "@/lib/store/stock";
 import { canCancel, canRequestReturn, returnDaysLeft, RETURN_WINDOW_DAYS, type Order } from "@/lib/order";
 
 export function OrderActions({ order }: { order: Order }) {
   const setOrderStatus = useAuthStore((s) => s.setOrderStatus);
-  const release = useStockStore((s) => s.release);
   const [confirming, setConfirming] = useState<"cancel" | "return" | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -78,9 +76,14 @@ export function OrderActions({ order }: { order: Order }) {
                 return;
               }
               if (cancelling) {
-                release(order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
                 setConfirming(null);
-                toast.success("Order cancelled. Nothing has been charged.");
+                toast.success(
+                  updated.paymentStatus === "refunded"
+                    ? "Order cancelled. A full refund is on its way."
+                    : updated.paymentStatus === "paid"
+                      ? "Order cancelled. The shop will refund your payment."
+                      : "Order cancelled. Nothing has been charged."
+                );
               } else {
                 setConfirming(null);
                 toast.success("Return requested. The shop will be in touch.");

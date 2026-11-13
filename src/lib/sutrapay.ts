@@ -25,6 +25,16 @@ export const TEST = {
  */
 export const QR_PAYEE = "sutra.demo@sutrapay";
 
+/** UPI apps a phone can hand the payment to (names only: no logos). */
+export const UPI_APPS = [
+  { id: "gpay", name: "Google Pay" },
+  { id: "phonepe", name: "PhonePe" },
+  { id: "paytm", name: "Paytm" },
+  { id: "bhim", name: "BHIM" },
+  { id: "other", name: "Other UPI app" },
+] as const;
+export type UpiAppId = (typeof UPI_APPS)[number]["id"];
+
 /** The standard UPI payment link a QR code carries (NPCI's upi://pay format). */
 export function upiPayLink(orderId: string, amount: number): string {
   const q = new URLSearchParams({

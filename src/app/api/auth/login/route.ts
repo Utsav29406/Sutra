@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rejectNonJson } from "@/lib/server/json-only";
 import { signIn } from "@/lib/server/users";
 import { setSessionCookie } from "@/lib/server/session";
 import { alertSignIn } from "@/lib/server/sign-in-alert";
@@ -6,6 +7,8 @@ import { alertSignIn } from "@/lib/server/sign-in-alert";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const notJson = rejectNonJson(req);
+  if (notJson) return notJson;
   const body = await req.json().catch(() => null);
   const { email, password } = body ?? {};
 

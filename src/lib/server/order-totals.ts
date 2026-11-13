@@ -22,6 +22,13 @@ const MAX_PER_LINE = 10;
  */
 export function checkItems(order: Order): string | null {
   if (order.items.length > 30) return "That's more pieces than one order can hold.";
+  // The limit is per piece and size, however many lines it is split across:
+  // 30 lines of 8 used to get 240 of a piece past a limit of 8.
+  const perLine = new Map<string, number>();
+  for (const item of order.items) {
+    const key = `${item?.productId}|${item?.size}`;
+    perLine.set(key, (perLine.get(key) ?? 0) + (Number.isInteger(item?.quantity) ? item.quantity : 0));
+  }
   for (const item of order.items) {
     const product = products.find((p) => p.id === item?.productId);
     if (!product) return "Something in your bag is no longer in the collection. Please remove it.";
@@ -30,7 +37,7 @@ export function checkItems(order: Order): string | null {
     }
     const most = Math.min(product.stock, MAX_PER_LINE);
     if (!Number.isInteger(item.quantity) || item.quantity < 1) return "An item quantity is not valid.";
-    if (item.quantity > most) {
+    if (item.quantity > most || (perLine.get(`${item.productId}|${item.size}`) ?? 0) > most) {
       return most < 1
         ? `${product.name} is sold out. Please remove it from your bag.`
         : `Only ${most} of ${product.name} can be ordered at once.`;

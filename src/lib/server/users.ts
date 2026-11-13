@@ -245,7 +245,8 @@ export async function resetPassword(
     passwordHash,
     normalizeEmail(email),
   ]);
-  return result.affectedRows > 0
-    ? { ok: true }
-    : { ok: false, error: "No account found for that email." };
+  if (result.affectedRows === 0) return { ok: false, error: "No account found for that email." };
+  // "Too many wrong passwords ... or reset your password": so a reset ends the pause.
+  await mutate("DELETE FROM otp_locks WHERE identifier = $1", [loginKey(email)]);
+  return { ok: true };
 }

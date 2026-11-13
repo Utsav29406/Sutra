@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { rejectNonJson } from "@/lib/server/json-only";
 import { createChallenge, maskEmail } from "@/lib/otp";
 import { findAccount } from "@/lib/server/users";
 import { sendOtpCode } from "@/lib/server/email";
@@ -7,10 +8,19 @@ import { CAPTCHA_ERROR, clientIp, verifyTurnstile } from "@/lib/server/turnstile
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const notJson = rejectNonJson(req);
+  if (notJson) return notJson;
   const body = await req.json().catch(() => null);
   const identifier = body?.identifier;
 
-  if (typeof identifier !== "string" || !identifier.includes("@") || identifier.trim().length > 190) {
+  // A real email only (the same rule as sign-up). Anything looser let
+  // "login:someone@x.com" through, which shares its lock row with that
+  // person's wrong-password limit: failing codes for it paused their sign-in.
+  if (
+    typeof identifier !== "string" ||
+    identifier.trim().length > 190 ||
+    !/^[^\s@:]+@[^\s@]+\.[^\s@]+$/.test(identifier.trim().toLowerCase())
+  ) {
     return NextResponse.json({ ok: false, error: "Enter a valid email address." }, { status: 400 });
   }
 
@@ -25,7 +35,15 @@ export async function POST(req: NextRequest) {
   // Only issue a challenge for an address that actually has an account. The
   // reply is deliberately identical either way, so this endpoint cannot be used
   // to discover which addresses are registered.
-  const account = await findAccount(email).catch(() => null);
+  // A database error is not "no account": answering "code sent" and sending
+  // nothing would leave a real customer waiting for an email that never comes.
+  let account: Awaited<ReturnType<typeof findAccount>>;
+  try {
+    account = await findAccount(email);
+  } catch (error) {
+    console.error("[otp/request] account lookup failed:", error);
+    return NextResponse.json({ ok: false, error: "Could not send a code just now. Please try again." }, { status: 500 });
+  }
   const masked = maskEmail(email);
 
   // Issued before the account check, and by the same path either way, so a
@@ -52,21 +70,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, challenge, masked, delivery: "email" });
   }
 
-  const mail = await sendOtpCode(account.email, code);
+  // In production the email goes out after the reply, so a registered address
+  // answers as fast as an unknown one: waiting for the mail provider first
+  // made the response time reveal who has an account.
+  if (process.env.NODE_ENV === "production") {
+    const to = account.email;
+    after(async () => {
+      const mail = await sendOtpCode(to, code).catch((error) => ({ ok: false as const, error: String(error) }));
+      if (!mail.ok) console.error("[otp/request] could not send code:", mail.error);
+    });
+    return NextResponse.json({ ok: true, challenge, masked, delivery: "email" });
+  }
 
+  // Outside production (only): send now, and if no mail provider is set up,
+  // hand the code back so the flow stays testable. Never in production, where
+  // that would let anyone reset any account by calling this endpoint.
+  const mail = await sendOtpCode(account.email, code);
   if (!mail.ok) {
     console.error("[otp/request] could not send code:", mail.error);
-
-    // Outside production the code is returned so the flow stays testable with no
-    // mail provider configured. Never in production: handing the code back would
-    // let anyone reset any account by calling this endpoint directly.
-    if (process.env.NODE_ENV !== "production") {
-      return NextResponse.json({ ok: true, challenge, masked, delivery: "none", devCode: code });
-    }
-    return NextResponse.json(
-      { ok: false, error: "We could not send your code right now. Please try again shortly." },
-      { status: 502 }
-    );
+    return NextResponse.json({ ok: true, challenge, masked, delivery: "none", devCode: code });
   }
 
   return NextResponse.json({ ok: true, challenge, masked, delivery: "email" });

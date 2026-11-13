@@ -1,6 +1,6 @@
 import "server-only";
-import { getOrder, markOrderPaid } from "@/lib/server/orders";
-import { getCashfreeOrder, paymentProvider } from "@/lib/server/cashfree";
+import { getOrder, markLatePaymentRefunded, markOrderPaid } from "@/lib/server/orders";
+import { getCashfreeOrder, paymentProvider, refundCashfreeOrder } from "@/lib/server/cashfree";
 import { sendOrderConfirmation } from "@/lib/server/email";
 import type { Order } from "@/lib/order";
 
@@ -28,6 +28,17 @@ export async function settlePayment(id: string): Promise<{ order: Order | null; 
     const mail = await sendOrderConfirmation(updated);
     if (!mail.ok) console.error("[payments] confirmation email failed:", mail.error);
     return { order: updated, paid: true };
+  }
+  // Paid after the order was cancelled (the payment window was still open):
+  // give the money straight back rather than keep it for nothing.
+  if (order.status === "Cancelled") {
+    try {
+      await refundCashfreeOrder(id, order.total);
+      await markLatePaymentRefunded(id, cf.cf_order_id != null ? String(cf.cf_order_id) : null);
+    } catch (error) {
+      console.error("[payments] refund of a late payment failed", id, error);
+    }
+    return { order: await getOrder(id), paid: false };
   }
   // Settled in the meantime by the other caller.
   const now = await getOrder(id);

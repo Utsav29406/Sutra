@@ -14,5 +14,12 @@ export const dynamic = "force-dynamic";
  * signed out.
  */
 export async function GET() {
-  return NextResponse.json({ ok: true, user: await getSession() });
+  // A database hiccup is "don't know", not "signed out": answering user:null
+  // would sign the browser out while its cookie is still good. ok:false makes
+  // the store keep what it has.
+  try {
+    return NextResponse.json({ ok: true, user: await getSession({ throwOnDbError: true }) });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Could not check your session." }, { status: 503 });
+  }
 }

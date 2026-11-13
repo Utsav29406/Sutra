@@ -20,7 +20,8 @@ export default function HomeReviews() {
 
   const picked = reviews
     .filter((r) => r.rating >= 4 && r.body.trim().length >= 20)
-    .sort((a, b) => b.writtenAt.localeCompare(a.writtenAt))
+    // Reviews from a delivered order (verified) first, then the newest.
+    .sort((a, b) => Number(!!b.orderId) - Number(!!a.orderId) || b.writtenAt.localeCompare(a.writtenAt))
     .slice(0, MAX_SHOWN);
 
   if (picked.length < MIN_TO_SHOW) return null;

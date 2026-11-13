@@ -5,9 +5,8 @@ import { useMemo, useState } from "react";
 import { ChevronDown, MapPin, Package, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/lib/store/auth";
-import { useStockStore } from "@/lib/store/stock";
 import { formatPrice } from "@/lib/utils";
-import { isDemoPayment, nextStatuses, paymentLabel, restoresStock, STATUS_STYLES, type Order, type OrderStatus } from "@/lib/order";
+import { isDemoPayment, nextStatuses, paymentLabel, STATUS_STYLES, type Order, type OrderStatus } from "@/lib/order";
 import { offerLabel } from "@/lib/festival";
 
 const FILTERS: Array<"All" | OrderStatus> = [
@@ -22,7 +21,6 @@ const FILTERS: Array<"All" | OrderStatus> = [
 
 export function OrdersTab({ orders }: { orders: Order[] }) {
   const setOrderStatus = useAuthStore((s) => s.setOrderStatus);
-  const release = useStockStore((s) => s.release);
   const [filter, setFilter] = useState<"All" | OrderStatus>("All");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -96,7 +94,9 @@ export function OrdersTab({ orders }: { orders: Order[] }) {
         <ul className="mt-5 flex flex-col gap-3">
           {filtered.map((order) => {
             const isOpen = expanded === order.id;
-            const upcoming = nextStatuses(order);
+            // An online order whose payment never came through can only be cancelled.
+            const upcoming =
+              order.paymentStatus === "pending" ? nextStatuses(order).filter((s) => s === "Cancelled") : nextStatuses(order);
             const itemCount = order.items.reduce((sum, i) => sum + i.quantity, 0);
             return (
               <li key={order.id} className="overflow-hidden rounded-2xl border border-white/10 bg-cream-dark/70 shadow-sm">
@@ -195,15 +195,21 @@ export function OrdersTab({ orders }: { orders: Order[] }) {
                             key={status}
                             onClick={async () => {
                               if (busy) return;
+                              // Neither can be undone, and a paid order is refunded and emailed.
+                              if (
+                                (status === "Cancelled" || status === "Returned") &&
+                                !window.confirm(
+                                  `Mark ${order.id} ${status}?${order.paymentStatus === "paid" ? " The payment will be refunded." : ""} This can't be undone.`
+                                )
+                              ) {
+                                return;
+                              }
                               setBusy(order.id);
                               const updated = await setOrderStatus(order.id, status);
                               setBusy(null);
                               if (!updated) {
-                                toast.error(`Could not update ${order.id}. Please try again.`);
+                                toast.error(`Could not update ${order.id}. It may have changed: refresh the page and try again.`);
                                 return;
-                              }
-                              if (restoresStock(status)) {
-                                release(order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
                               }
                               toast.success(`${order.id} marked ${status}.`);
                             }}

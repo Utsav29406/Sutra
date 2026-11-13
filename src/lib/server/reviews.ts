@@ -1,7 +1,7 @@
 import "server-only";
 import { query, mutate, isUniqueViolation, toSqlDate, fromSqlDate } from "@/lib/db";
 import type { Review } from "@/lib/review";
-import { randomUUID } from "crypto";
+import { createHash } from "crypto";
 import { products } from "@/lib/products";
 import { getOrder } from "@/lib/server/orders";
 
@@ -56,9 +56,17 @@ export async function createReview(
     return { ok: false, error: "Pick a rating between one and five stars." };
   }
   if (body.length > 500) return { ok: false, error: "Keep your review under 500 characters." };
+  // The product page asks for this much; now the server does too.
+  if (review.orderId == null && body.length < 10) {
+    return { ok: false, error: "Write at least a few words (10 characters or more)." };
+  }
 
   let orderId: string | undefined;
-  let id = `rev-${randomUUID()}`;
+  // One review per account per piece from the product page: a fixed id, so a
+  // second one hits the primary key. A random id let one account post any
+  // number of five-star reviews (and fill the home page's "Worn and Loved").
+  const who = createHash("sha256").update(session.email.toLowerCase()).digest("hex").slice(0, 12);
+  let id = `rev-u-${who}-${productId}`.slice(0, 64);
   if (review.orderId != null) {
     const order = typeof review.orderId === "string" ? await getOrder(review.orderId) : null;
     if (!order || order.email !== session.email || !order.items.some((i) => i.productId === productId)) {
@@ -90,7 +98,10 @@ export async function createReview(
     );
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { ok: false, error: "You've already rated this piece from this order." };
+      return {
+        ok: false,
+        error: orderId ? "You've already rated this piece from this order." : "You've already reviewed this piece.",
+      };
     }
     throw error;
   }

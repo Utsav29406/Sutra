@@ -153,7 +153,15 @@ export async function setOrderStatus(
   status: OrderStatus,
   from?: OrderStatus
 ): Promise<Order | null> {
-  const result = from
+  // updated_at doubles as the delivery date while an order is Delivered (the
+  // 7-day return window counts from it). Asking for a return, or having one
+  // turned down, must not move it - or every rejected return would restart
+  // the window.
+  const keepsDate =
+    (from === "Delivered" && status === "Return Requested") || (from === "Return Requested" && status === "Delivered");
+  const result = from && keepsDate
+    ? await mutate("UPDATE orders SET status = $1 WHERE id = $2 AND status = $3", [status, id, from])
+    : from
     ? await mutate("UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3 AND status = $4", [
         status,
         toSqlDate(new Date().toISOString()),
@@ -184,11 +192,24 @@ export async function setOrderStatus(
 export async function markOrderPaid(id: string, paymentRef: string | null): Promise<Order | null> {
   const result = await mutate(
     `UPDATE orders SET payment_status = 'paid', payment_ref = $2, paid_at = now()
-     WHERE id = $1 AND payment_method = 'card' AND payment_status = 'pending'`,
+     WHERE id = $1 AND payment_method = 'card' AND payment_status = 'pending' AND status = 'Processing'`,
     [id, paymentRef]
   );
   if (result.affectedRows === 0) return null;
   return getOrder(id);
+}
+
+/**
+ * A payment that came through after its order was cancelled: recorded as paid
+ * and refunded in one go (the caller has already refunded it at the gateway).
+ */
+export async function markLatePaymentRefunded(id: string, paymentRef: string | null): Promise<boolean> {
+  const result = await mutate(
+    `UPDATE orders SET payment_status = 'refunded', payment_ref = $2, paid_at = now()
+     WHERE id = $1 AND payment_method = 'card' AND payment_status = 'pending' AND status = 'Cancelled'`,
+    [id, paymentRef]
+  );
+  return result.affectedRows > 0;
 }
 
 export async function markOrderRefunded(id: string): Promise<void> {
