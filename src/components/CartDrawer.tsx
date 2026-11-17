@@ -7,7 +7,7 @@ import { Minus, Plus, ShoppingBag, X } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
 import { freeDeliveryFrom, quote } from "@/lib/pricing";
-import { useFestival, useMember } from "@/lib/useFestival";
+import { useMember } from "@/lib/useMember";
 import Photo from "@/components/Photo";
 import { FreeDeliveryNudge } from "@/components/FreeDeliveryNudge";
 
@@ -18,10 +18,9 @@ export default function CartDrawer() {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
   const subtotal = useCartStore((s) => s.subtotal);
-  const festival = useFestival();
   const member = useMember();
-  // The bag shows what the shopper will pay when a festival or a member price applies.
-  const offerQuote = festival || member?.percentOff ? quote(items, null, Date.now(), member) : null;
+  // The bag shows what the shopper will pay when a member price applies.
+  const offerQuote = member?.percentOff ? quote(items, null, member) : null;
   const deliveryFrom = freeDeliveryFrom(member);
   const panel = useRef<HTMLElement>(null);
 
@@ -194,16 +193,14 @@ export default function CartDrawer() {
                     {formatPrice(subtotal())}
                   </motion.span>
                 </div>
-                {!festival?.freeShipping && deliveryFrom > 0 && (
+                {deliveryFrom > 0 && (
                   <FreeDeliveryNudge subtotal={subtotal()} threshold={deliveryFrom} className="-mt-1 mb-4" />
                 )}
                 {offerQuote && offerQuote.discount > 0 && (
                   <div className="-mt-1 mb-4 flex flex-col gap-1 rounded-xl border border-accent/30 bg-accent/[0.07] px-3.5 py-2.5 text-sm">
                     <p className="flex justify-between text-accent-light">
                       <span>
-                        {offerQuote.memberApplied && member
-                          ? `Sutra Gold · ${member.name} ${member.percentOff}% off`
-                          : `${festival?.name} offer · ${festival?.percentOff}% off`}
+                        {member && `Sutra Gold · ${member.name} ${member.percentOff}% off`}
                       </span>
                       <span>−{formatPrice(offerQuote.discount)}</span>
                     </p>

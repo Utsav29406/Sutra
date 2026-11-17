@@ -2,7 +2,7 @@ import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
 import { paymentLabel, RETURN_WINDOW_DAYS, type Order, type OrderStatus } from "@/lib/order";
 import { renderInvoice } from "@/lib/server/invoice";
-import { offerLabel } from "@/lib/festival";
+import { offerLabel } from "@/lib/offer-label";
 
 /*
  * Two ways out, picked at runtime.

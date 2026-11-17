@@ -29,19 +29,14 @@ import MobileTabBar from "@/sutra-mobile/MobileTabBar";
 import IntroSplash from "@/components/IntroSplash";
 import MotionProvider from "@/components/MotionProvider";
 import { INTRO_GATE } from "@/lib/intro";
-import { THEME_GATE } from "@/lib/festival-theme";
-import { DiwaliDefs } from "@/components/DiwaliDecor";
-import { FESTIVAL_GATE } from "@/lib/festival-gate";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
 import ChatWidget from "@/components/ChatWidget";
-import OffersButton from "@/components/OffersButton";
 import SiteBackdrop from "@/components/SiteBackdrop";
 import Press from "@/components/Press";
 import DataBootstrap from "@/components/DataBootstrap";
 import { GoogleOneTap } from "@/components/GoogleSignIn";
 import { Notifications } from "@/components/Notifications";
-import FestivalTeaser from "@/components/FestivalTeaser";
 import InstallApp from "@/components/InstallApp";
 import { SITE_ALT_NAMES, SITE_NAME, SITE_URL, jsonLd } from "@/lib/site";
 
@@ -99,11 +94,6 @@ export default function RootLayout({
       >
         {/* Decides before the first paint whether the opening intro plays. */}
         <script dangerouslySetInnerHTML={{ __html: INTRO_GATE }} />
-        {/* Marks the festival running now, so the hero shows the right line from the first paint. */}
-        <script dangerouslySetInnerHTML={{ __html: FESTIVAL_GATE }} />
-        {/* Turns the festival theme on while its dates run (lib/festival-theme). */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_GATE }} />
-        <DiwaliDefs />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_JSON_LD }} />
         <MotionProvider>
           <IntroSplash />
@@ -123,11 +113,8 @@ export default function RootLayout({
           <MobileTabBar />
           <CartDrawer />
           <ChatWidget />
-          {/* Tablets and up: Offers at the bottom-left, opposite the chat. */}
-          <OffersButton floating className="max-md:hidden print:hidden" />
           <Press />
           <Notifications />
-          <FestivalTeaser />
           <InstallApp />
         </MotionProvider>
       </body>

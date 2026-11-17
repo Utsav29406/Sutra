@@ -1,7 +1,7 @@
 import "server-only";
 import PDFDocument from "pdfkit";
 import { paymentLabel, type Order } from "@/lib/order";
-import { offerLabel } from "@/lib/festival";
+import { offerLabel } from "@/lib/offer-label";
 
 /**
  * Amounts are written as "Rs." rather than the rupee sign. PDFKit's built-in

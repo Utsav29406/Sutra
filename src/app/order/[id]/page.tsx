@@ -15,7 +15,7 @@ import { PageSkeleton } from "@/components/PageSkeleton";
 import { OrderTimeline } from "@/components/OrderTimeline";
 import { OrderActions } from "@/components/OrderActions";
 import { OrderFeedback } from "@/components/OrderFeedback";
-import { offerLabel } from "@/lib/festival";
+import { offerLabel } from "@/lib/offer-label";
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

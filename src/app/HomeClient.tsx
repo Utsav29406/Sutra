@@ -5,10 +5,7 @@ import { m as motion } from "framer-motion";
 import Hero from "@/components/Hero";
 import PromiseRail from "@/components/PromiseRail";
 import OffersStrip from "@/components/OffersStrip";
-import FestivalBanner from "@/components/FestivalBanner";
-import FestivalEdit from "@/components/FestivalEdit";
 import { CircleHomeCard } from "@/components/CircleParts";
-import { Embers, LampLine } from "@/components/DiwaliDecor";
 import ProductCard from "@/components/ProductCard";
 import HomeReviews from "@/components/HomeReviews";
 import { products } from "@/lib/products";
@@ -22,18 +19,14 @@ const featured = products.filter((p) => p.featured).slice(0, FEATURED_COUNT);
 export default function HomeClient() {
   return (
     <div>
-      <Embers />
       <Hero />
-      <FestivalBanner />
       <PromiseRail />
       <OffersStrip />
       <CircleHomeCard className="px-4 pt-6" />
-      <FestivalEdit />
 
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-10 flex items-end justify-between">
           <div>
-            <LampLine />
             <p className="text-sm uppercase tracking-[0.3em] text-accent">Handpicked</p>
             <h2 className="mt-2 font-display text-3xl sm:text-4xl">Featured Pieces</h2>
           </div>

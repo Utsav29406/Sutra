@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import IntroDiwali from "@/components/IntroDiwali";
 
 /*
  * The opening on someone's first page of a visit: the knot arrives (IntroKnot),
@@ -25,8 +24,7 @@ const TAGLINE = "Indian Traditional Wear";
 /*
  * The knot's two strands (SutraMark's arcs). How they arrive is all CSS
  * ("Opening intro" in globals.css): a gold spark runs round each strand as it
- * glows up, or, during Diwali, a diya flame lights in the middle and opens out
- * into the knot. Both move only by turning, scaling and fading, which phones
+ * glows up. It moves only by turning, scaling and fading, which phones
  * keep running while they are busy starting the page.
  */
 const STRANDS = [
@@ -38,7 +36,6 @@ const STRANDS = [
 function IntroKnot() {
   return (
     <span className="sutra-intro-mark relative h-[1.55em] w-[1.55em] shrink-0 text-primary">
-      <span className="sutra-intro-flame" />
       {STRANDS.map((strand) => (
         <span key={strand.d} className={strand.className}>
           <svg viewBox="0 0 100 100">
@@ -117,9 +114,7 @@ export default function IntroSplash() {
         }
       }}
     >
-      <div className="sutra-intro-bg">
-        <IntroDiwali />
-      </div>
+      <div className="sutra-intro-bg" />
       <div className="sutra-intro-center">
         {/* Built like <Logo />, so its proportions match the header logo it lands on. */}
         <span ref={logoRef} className="sutra-intro-logo inline-flex items-center gap-[0.34em]">

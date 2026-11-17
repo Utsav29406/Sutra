@@ -6,9 +6,8 @@ import { formatPrice } from "@/lib/utils";
 /**
  * "Add ₹X more for free delivery" with a thread that fills toward the
  * threshold; "Free delivery unlocked" once the bag clears it. Counts the
- * subtotal before any discount, as checkout does (lib/pricing). Not shown while
- * a festival already makes delivery free. `threshold` is lower for Sutra Gold
- * members (lib/circle.ts).
+ * subtotal before any discount, as checkout does (lib/pricing). `threshold` is
+ * lower for Sutra Gold members (lib/circle.ts).
  */
 export function FreeDeliveryNudge({
   subtotal,

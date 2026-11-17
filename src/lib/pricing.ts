@@ -1,5 +1,4 @@
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "@/lib/shipping";
-import { activeFestival, DAY_MS, festivalPrice, type Festival } from "@/lib/festival";
 import { circleCode, memberPrice, type Tier } from "@/lib/circle";
 
 /**
@@ -42,9 +41,7 @@ export type Quote = {
   discount: number;
   shipping: number;
   total: number;
-  /** The festival running now, if any. Coupons are not taken while it is. */
-  festival: Festival | null;
-  /** What to store as the order's offer: a festival id or a coupon code. */
+  /** What to store as the order's offer: a member price or a coupon code. */
   offerCode: string | null;
   /** Set when a coupon was asked for and can't be used. */
   couponError: string | null;
@@ -66,14 +63,12 @@ export function findCoupon(code: string): Coupon | null {
 }
 
 /**
- * One saving per order: a festival price (which takes no codes while it runs),
- * otherwise the member price or a code, whichever saves more. `member` is the
+ * One saving per order: the member price or a code, whichever saves more. `member` is the
  * shopper's Sutra Gold level: the server reads it from the database, so a
  * request can't claim one (lib/server/order-totals.ts).
  */
-export function quote(lines: Line[], couponCode: string | null, now: number = Date.now(), member: Tier | null = null): Quote {
+export function quote(lines: Line[], couponCode: string | null, member: Tier | null = null): Quote {
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
-  const festival = activeFestival(now, member ? member.earlyDays * DAY_MS : 0);
   // A member price comes back from checkout as its own offer code; it is not a coupon.
   const asked = couponCode && !/^CIRCLE-/i.test(couponCode.trim()) ? couponCode : null;
 
@@ -89,43 +84,34 @@ export function quote(lines: Line[], couponCode: string | null, now: number = Da
   let couponError: string | null = null;
   let memberApplied = false;
 
-  if (festival) {
-    // Worked out piece by piece, so the total matches the festival price shown
-    // on every product card to the rupee.
-    discount = lines.reduce((sum, l) => sum + (l.price - festivalPrice(l.price, festival)) * l.quantity, 0);
-    freeShipping ||= festival.freeShipping;
-    offerCode = festival.id;
-    if (asked) couponError = `Codes can't be added to the ${festival.name} offer, which is already applied.`;
-  } else {
-    const memberDiscount = member?.percentOff
-      ? lines.reduce((sum, l) => sum + (l.price - memberPrice(l.price, member)) * l.quantity, 0)
-      : 0;
-    let couponDiscount = 0;
-    let coupon: Coupon | null = null;
-    if (asked) {
-      coupon = findCoupon(asked);
-      if (!coupon) couponError = "That code isn't one of ours.";
-      else if (coupon.minSpend && subtotal < coupon.minSpend) {
-        couponError = `Spend ₹${coupon.minSpend.toLocaleString("en-IN")} to use ${coupon.code}.`;
-        coupon = null;
-      } else if (coupon.percentOff) {
-        couponDiscount = Math.round((subtotal * coupon.percentOff) / 100);
-        if (coupon.maxDiscount) couponDiscount = Math.min(couponDiscount, coupon.maxDiscount);
-      } else if (coupon.amountOff) {
-        couponDiscount = coupon.amountOff;
-      }
+  const memberDiscount = member?.percentOff
+    ? lines.reduce((sum, l) => sum + (l.price - memberPrice(l.price, member)) * l.quantity, 0)
+    : 0;
+  let couponDiscount = 0;
+  let coupon: Coupon | null = null;
+  if (asked) {
+    coupon = findCoupon(asked);
+    if (!coupon) couponError = "That code isn't one of ours.";
+    else if (coupon.minSpend && subtotal < coupon.minSpend) {
+      couponError = `Spend ₹${coupon.minSpend.toLocaleString("en-IN")} to use ${coupon.code}.`;
+      coupon = null;
+    } else if (coupon.percentOff) {
+      couponDiscount = Math.round((subtotal * coupon.percentOff) / 100);
+      if (coupon.maxDiscount) couponDiscount = Math.min(couponDiscount, coupon.maxDiscount);
+    } else if (coupon.amountOff) {
+      couponDiscount = coupon.amountOff;
     }
+  }
 
-    if (member && memberDiscount > 0 && memberDiscount >= couponDiscount) {
-      discount = memberDiscount;
-      offerCode = circleCode(member);
-      memberApplied = true;
-      if (coupon) couponError = `Your ${member.name} member price saves more than ${coupon.code}, so it stays applied.`;
-    } else if (coupon) {
-      discount = couponDiscount;
-      freeShipping ||= !!coupon.freeShipping;
-      offerCode = coupon.code;
-    }
+  if (member && memberDiscount > 0 && memberDiscount >= couponDiscount) {
+    discount = memberDiscount;
+    offerCode = circleCode(member);
+    memberApplied = true;
+    if (coupon) couponError = `Your ${member.name} member price saves more than ${coupon.code}, so it stays applied.`;
+  } else if (coupon) {
+    discount = couponDiscount;
+    freeShipping ||= !!coupon.freeShipping;
+    offerCode = coupon.code;
   }
 
   discount = Math.min(discount, subtotal);
@@ -135,7 +121,6 @@ export function quote(lines: Line[], couponCode: string | null, now: number = Da
     discount,
     shipping,
     total: subtotal - discount + shipping,
-    festival,
     offerCode,
     couponError,
     member,

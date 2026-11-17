@@ -1,8 +1,8 @@
 /*
   Sutra Mobile: every style that applies to phones only (below Tailwind's md
-  breakpoint, 768px) or to the festival look on phones. Loaded after
-  globals.css (see app/layout.tsx), so these win over the shared rules at the
-  same specificity. Tablets and desktop never see any of it.
+  breakpoint, 768px). Loaded after globals.css (see app/layout.tsx), so
+  these win over the shared rules at the same specificity. Tablets and
+  desktop never see any of it.
 
   Guide: README.md in this folder.
 */

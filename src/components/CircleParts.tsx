@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Sparkles } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth";
-import { useFestival, useMember } from "@/lib/useFestival";
+import { useMember } from "@/lib/useMember";
 import { findTier, memberPrice, nextTier, TIERS, type Tier } from "@/lib/circle";
 import { formatPrice } from "@/lib/utils";
 
@@ -120,8 +120,8 @@ export function CircleCard({ compact = false }: { compact?: boolean }) {
       ) : (
         <>
           <p className="text-sm leading-relaxed text-foreground/70">
-            Free delivery from {formatPrice(TIERS[0].freeDeliveryFrom)}, festival prices a day early, and member prices as your
-            delivered orders add up.
+            Free delivery from {formatPrice(TIERS[0].freeDeliveryFrom)}, and member prices as your delivered orders add
+            up.
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <JoinCircleButton />
@@ -135,12 +135,11 @@ export function CircleCard({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Product page, under the price: what Sutra Gold means for this piece. Hidden while a festival price applies. */
+/** Product page, under the price: what Sutra Gold means for this piece. */
 export function CircleLine({ price }: { price: number }) {
   const member = useMember();
-  const festival = useFestival();
   const loaded = useAuthStore((s) => s.loaded);
-  if (festival || !loaded) return null;
+  if (!loaded) return null;
   const best = TIERS[TIERS.length - 1];
   return (
     <p className="mt-3 flex gap-2.5 rounded-[10px] border border-accent/30 bg-accent/[0.07] px-3 py-2.5 text-[13px] leading-relaxed text-foreground/75">
@@ -195,8 +194,7 @@ export function CircleHomeCard({ className = "" }: { className?: string }) {
           <>
             <h2 className="font-hero text-[22px] font-medium leading-tight">Join free, save more</h2>
             <p className="text-[13px] leading-relaxed text-foreground/65">
-              Free delivery from {formatPrice(TIERS[0].freeDeliveryFrom)}, festival prices early, member prices as your orders
-              add up.
+              Free delivery from {formatPrice(TIERS[0].freeDeliveryFrom)} and member prices as your orders add up.
             </p>
             <JoinCircleButton className="rounded-[10px] bg-accent py-2.5 text-sm font-semibold text-[#1a120c] disabled:opacity-60" />
           </>

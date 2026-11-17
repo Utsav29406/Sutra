@@ -2,7 +2,6 @@
 
 import { RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { formatThreshold } from "@/lib/shipping";
-import { useFestival } from "@/lib/useFestival";
 
 const promises = [
   { icon: Truck, lead: "Free shipping", rest: `over ${formatThreshold()}` },
@@ -12,14 +11,9 @@ const promises = [
 
 /** Sits between the hero and the stats bar, where the search band used to be. */
 export default function PromiseRail() {
-  // During a festival with free delivery, say so rather than quote the threshold.
-  const festival = useFestival();
-  const shown = festival?.freeShipping
-    ? [{ ...promises[0], rest: `on every order till ${festival.endsOn}` }, ...promises.slice(1)]
-    : promises;
   return (
     <section className="grid grid-cols-1 border-y border-white/10 bg-cream-dark/45 sm:grid-cols-3">
-      {shown.map(({ icon: Icon, lead, rest }) => (
+      {promises.map(({ icon: Icon, lead, rest }) => (
         <div
           key={lead}
           className="flex items-center justify-center gap-2.5 border-t border-white/10 px-4 py-3.5 text-xs text-foreground/70 first:border-t-0 sm:border-l sm:border-t-0 sm:first:border-l-0"

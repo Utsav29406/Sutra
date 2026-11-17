@@ -11,9 +11,7 @@ import { useHydrated } from "@/lib/useHydrated";
 import { useRequireAccount } from "@/lib/useRequireAccount";
 import { discountPercent, formatPrice } from "@/lib/utils";
 import type { Product } from "@/lib/products";
-import { festivalPrice } from "@/lib/festival";
 import { CARD_SIZES } from "@/lib/images";
-import { useFestival } from "@/lib/useFestival";
 import Photo from "@/components/Photo";
 import { toastAddedToBag } from "@/components/Notifications";
 
@@ -33,7 +31,6 @@ export default function ProductCard({
   const toggle = useWishlistStore((s) => s.toggle);
   const hydrated = useHydrated();
   const requireAccount = useRequireAccount();
-  const festival = useFestival();
 
   const discount = discountPercent(product.price, product.compareAtPrice);
   const stock = Math.max(0, liveStock ?? product.stock);
@@ -134,11 +131,6 @@ export default function ProductCard({
             )}
             {discount !== null && <span className="text-xs font-semibold text-emerald-400 md:hidden">{discount}% off</span>}
           </div>
-          {festival && (
-            <p className="mt-0.5 text-[12.5px] text-accent-light max-md:hidden">
-              {formatPrice(festivalPrice(product.price, festival))} in the {festival.name} offer
-            </p>
-          )}
         </div>
       </Link>
     </motion.div>

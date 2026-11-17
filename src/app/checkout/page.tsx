@@ -15,9 +15,8 @@ import type { Order } from "@/lib/order";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { FreeDeliveryNudge } from "@/components/FreeDeliveryNudge";
-import { activeFestival, DAY_MS } from "@/lib/festival";
 import { findCoupon, freeDeliveryFrom, quote, type Coupon } from "@/lib/pricing";
-import { useMember, useNow } from "@/lib/useFestival";
+import { useMember } from "@/lib/useMember";
 import { openCashfreeCheckout, verifyPayment } from "@/lib/cashfree-client";
 import { SutraPay, type PayOutcome } from "@/components/SutraPay";
 import Photo from "@/components/Photo";
@@ -68,16 +67,12 @@ export default function CheckoutPage() {
     pincode: fields.pincode ?? "",
   };
 
-  // A festival offer applies by itself and takes no codes while it runs. The
-  // same quote() checks the order again on the server.
-  // Sutra Gold members get their member price and early festival prices; the
-  // server prices the order again with the level from the database.
-  const now = useNow();
+  // Sutra Gold members get their member price; the server prices the order
+  // again with the same quote() and the level from the database.
   const member = useMember();
-  const festival = now === null ? null : activeFestival(now, member ? member.earlyDays * DAY_MS : 0);
-  const priced = quote(hydrated ? items : [], festival ? null : (appliedCoupon?.code ?? null), now ?? 0, member);
+  const priced = quote(hydrated ? items : [], appliedCoupon?.code ?? null, member);
   const { subtotal, discount, shipping, total } = priced;
-  const couponOk = !festival && !!appliedCoupon && !priced.couponError && discount > 0 && !priced.memberApplied;
+  const couponOk = !!appliedCoupon && !priced.couponError && discount > 0 && !priced.memberApplied;
   const deliveryFrom = freeDeliveryFrom(member);
 
   /*
@@ -109,7 +104,7 @@ export default function CheckoutPage() {
       setCouponError("Enter a code.");
       return;
     }
-    const result = quote(items, couponInput, Date.now(), member);
+    const result = quote(items, couponInput, member);
     const coupon = findCoupon(couponInput);
     if (result.couponError || !coupon) {
       setAppliedCoupon(null);
@@ -355,15 +350,13 @@ export default function CheckoutPage() {
                   <dt className="text-foreground/60">Subtotal</dt>
                   <dd>{formatPrice(subtotal)}</dd>
                 </div>
-                {discount > 0 && (festival || appliedCoupon || priced.memberApplied) && (
+                {discount > 0 && (appliedCoupon || priced.memberApplied) && (
                   <div className="flex justify-between text-primary">
                     <dt className="flex items-center gap-1.5">
                       <Tag size={13} />
-                      {festival
-                        ? `${festival.name} offer · ${festival.percentOff}% off`
-                        : priced.memberApplied && member
-                          ? `Sutra Gold · ${member.name} ${member.percentOff}%`
-                          : appliedCoupon?.code}
+                      {priced.memberApplied && member
+                        ? `Sutra Gold · ${member.name} ${member.percentOff}%`
+                        : appliedCoupon?.code}
                     </dt>
                     <dd>−{formatPrice(discount)}</dd>
                   </div>
@@ -372,23 +365,12 @@ export default function CheckoutPage() {
                   <dt className="text-foreground/60">Shipping</dt>
                   <dd>{shipping === 0 ? "Free" : formatPrice(shipping)}</dd>
                 </div>
-                {!festival?.freeShipping && deliveryFrom > 0 && (
+                {deliveryFrom > 0 && (
                   <FreeDeliveryNudge subtotal={subtotal} threshold={deliveryFrom} className="mt-1" />
                 )}
 
                 <div className="mt-2 border-t border-white/12 pt-4">
-                  {festival ? (
-                    // While a festival offer runs it is applied already, so there
-                    // is no code box to puzzle over.
-                    <p className="flex gap-2 rounded-xl border border-accent/30 bg-accent/[0.07] px-3 py-2.5 text-[13px] leading-relaxed text-foreground/80">
-                      <Tag size={14} className="mt-0.5 shrink-0 text-accent-light" aria-hidden="true" />
-                      <span>
-                        <strong className="font-medium text-accent-light">{festival.name} offer applied.</strong>{" "}
-                        {festival.percentOff}% off every piece{festival.freeShipping ? " and free delivery" : ""}, no code
-                        needed. Ends on {festival.endsOn}.
-                      </span>
-                    </p>
-                  ) : couponOk && appliedCoupon ? (
+                  {couponOk && appliedCoupon ? (
                     <div className="flex items-center justify-between gap-3 rounded-xl bg-primary/5 px-3 py-2.5">
                       <span className="flex min-w-0 items-center gap-2 text-sm">
                         <Tag size={14} className="shrink-0 text-primary" />

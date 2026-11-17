@@ -18,11 +18,7 @@ const RULES = [
   },
   {
     title: "One saving per order",
-    body: "Your member price, a discount code or a festival price: whichever saves you more is applied. They don't combine.",
-  },
-  {
-    title: "Festival prices early",
-    body: "When a festival offer such as Diwali opens, members get its prices one to three days before everyone else.",
+    body: "Your member price or a discount code: whichever saves you more is applied. They don't combine.",
   },
 ];
 

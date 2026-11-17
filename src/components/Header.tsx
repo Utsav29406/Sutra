@@ -11,7 +11,6 @@ import { useAuthStore } from "@/lib/store/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { Logo } from "@/components/Logo";
 import SearchBar from "@/components/SearchBar";
-import OffersButton from "@/components/OffersButton";
 import { CollectionsPanel, useCollectionsMenu } from "@/components/CollectionsMenu";
 import { MOBILE_BAR_HIDDEN, PHONE_SEARCH_EVENT } from "@/sutra-mobile/MobileTabBar";
 
@@ -239,12 +238,6 @@ export default function Header() {
 
         <div className="order-2 flex shrink-0 items-center gap-1 justify-self-end md:order-none md:gap-2 lg:w-full lg:justify-end lg:pl-6">
           <SearchBar />
-
-          {/* Phones only: from tablets up, Offers floats at the bottom-left
-              (layout.tsx) so the search box keeps its width. Phones show the
-              bag up here on product and checkout pages; there is no room for
-              both, and the bag matters more there. */}
-          <OffersButton className={`md:hidden ${MOBILE_BAR_HIDDEN(pathname) ? "max-md:hidden" : ""}`} />
 
           {/* Phones open search from the tab bar; where that bar steps aside
               (product, checkout), this icon does it instead. */}

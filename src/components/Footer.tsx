@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { m as motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
-import { FooterLamps } from "@/components/DiwaliDecor";
 import { InstallAppButton } from "@/components/InstallApp";
 
 export default function Footer() {
@@ -15,7 +14,6 @@ export default function Footer() {
       transition={{ duration: 0.6 }}
       className="relative mt-20 border-t border-white/10 bg-cream-dark"
     >
-      <FooterLamps />
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 py-12 sm:grid-cols-4">
         <div className="col-span-2 sm:col-span-1">
           <Logo className="text-[24px]" />

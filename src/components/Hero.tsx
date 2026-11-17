@@ -2,39 +2,17 @@
 
 import Link from "next/link";
 import { m as motion } from "framer-motion";
-import DaysToGo from "@/components/DaysToGo";
-import { Diya, HeroNight } from "@/components/DiwaliDecor";
-import { DAY_MS, festivalEnd, festivalOpensLabel, findFestival } from "@/lib/festival";
-
-/*
- * Diwali's words for the hero. Both versions are in the HTML; CSS shows the
- * Diwali ones (data-diwali) while the theme runs, and of those the "before" or
- * "during" line by whether the offer has opened (data-festival, set by
- * FESTIVAL_GATE). After the offer ends the everyday hero is back by itself.
- */
-const DIWALI = findFestival("DIWALI");
-const DIWALI_OPENS = DIWALI ? festivalOpensLabel(DIWALI) : "";
-const DIWALI_LAST = DIWALI
-  ? new Date(festivalEnd(DIWALI) - DAY_MS).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      timeZone: "Asia/Kolkata",
-    })
-  : "";
 
 const HEADLINE = [
   ["Timeless", "Threads,"],
   ["Woven", "for", "Today."],
 ];
-/** The word Diwali swaps in for "Today.". */
-const DIWALI_WORD = "Diwali.";
 
 export default function Hero() {
   return (
     <section className="relative flex min-h-[85vh] items-center overflow-hidden">
       {/* The sparkles, mandalas and glow live in SiteBackdrop, fixed behind
           every page. */}
-      {DIWALI && <HeroNight />}
 
       {/* w-full matters: as a flex item this div would otherwise shrink to its
           content, so max-w-7xl never engages and mx-auto centres the block
@@ -48,18 +26,12 @@ export default function Hero() {
             transition={{ duration: 0.6 }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img data-diwali-off src="/images/namaste-icon.png" alt="Namaste" className="h-16 w-16" />
-            {DIWALI && (
-              <span data-diwali className="contents">
-                <Diya className="sutra-fest-heroicon" />
-              </span>
-            )}
+            <img src="/images/namaste-icon.png" alt="Namaste" className="h-16 w-16" />
             {/* Flush left with the headline below it — the rule that used to
                 lead this line indented it past everything else. */}
             <div className="flex items-center gap-3">
               <span className="font-hero-ui text-[11px] font-normal uppercase tracking-[0.34em] text-accent-light">
-                <span data-diwali-off>Welcome to Sutra</span>
-                {DIWALI && <span data-diwali>Diwali at Sutra</span>}
+                Welcome to Sutra
               </span>
               <span className="h-px w-7 bg-accent-light/55" />
             </div>
@@ -71,18 +43,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <span data-diwali-off>Indian Traditional Wear</span>
-            {DIWALI && (
-              <span data-diwali className="text-[#f8c23a]">
-                <span data-diwali-before>
-                  {DIWALI.percentOff}% off from {DIWALI_OPENS}
-                  <DaysToGo festival={DIWALI} />
-                </span>
-                <span data-diwali-during>
-                  {DIWALI.percentOff}% off until {DIWALI.endsOn}, {DIWALI_LAST}
-                </span>
-              </span>
-            )}
+            Indian Traditional Wear
           </motion.p>
 
           <h1 className="font-hero text-[3rem] font-light leading-[1.06] tracking-[-0.005em] sm:text-[3.625rem]">
@@ -100,14 +61,7 @@ export default function Hero() {
                       ease: "easeOut",
                     }}
                   >
-                    {DIWALI && word === "Today." ? (
-                      <>
-                        <span data-diwali-off>{word}</span>
-                        <span data-diwali>{DIWALI_WORD}</span>
-                      </>
-                    ) : (
-                      word
-                    )}
+                    {word}
                   </motion.span>
                 ))}
                 {lineIndex === 0 && <br />}
@@ -121,23 +75,8 @@ export default function Hero() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.9 }}
           >
-            <span data-diwali-off>
-              Handpicked sarees, lehengas, kurtas and sherwanis — crafted by master
+            Handpicked sarees, lehengas, kurtas and sherwanis — crafted by master
               weavers across India, delivered to your doorstep.
-            </span>
-            {DIWALI && (
-              <span data-diwali>
-                Silk sarees, bridal lehengas and sherwanis, handwoven across India.{" "}
-                <span data-diwali-before>
-                  From {DIWALI_OPENS} to {DIWALI.endsOn} every piece is {DIWALI.percentOff}% off
-                  {DIWALI.freeShipping ? " with free delivery" : ""}. No code needed.
-                </span>
-                <span data-diwali-during>
-                  Every piece is {DIWALI.percentOff}% off{DIWALI.freeShipping ? " with free delivery" : ""} until{" "}
-                  {DIWALI.endsOn}. No code needed: the prices have already dropped.
-                </span>
-              </span>
-            )}
           </motion.p>
 
           <motion.div
@@ -148,20 +87,10 @@ export default function Hero() {
           >
             <Link
               href="/shop"
-              data-diwali-off
               className="btn-shimmer rounded-full bg-white px-7 py-3 font-hero-ui text-sm font-medium text-primary transition hover:bg-accent-light"
             >
               Shop the Collection
             </Link>
-            {DIWALI && (
-              <Link
-                href="#festival-edit"
-                data-diwali
-                className="sutra-fest-cta btn-shimmer rounded-full px-7 py-3 font-hero-ui text-sm font-medium"
-              >
-                Shop the {DIWALI.name} Edit
-              </Link>
-            )}
             <Link
               href="/shop?q=bridal"
               className="btn-shimmer rounded-full border border-white/50 px-7 py-3 font-hero-ui text-sm font-medium text-white transition hover:bg-white/10"
@@ -173,7 +102,6 @@ export default function Hero() {
       </div>
 
       <motion.div
-        data-diwali-off
         className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/70"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

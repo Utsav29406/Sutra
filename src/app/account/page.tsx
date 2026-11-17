@@ -13,7 +13,7 @@ import { MandalaMotif } from "@/components/MandalaMotif";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { OrderTimeline } from "@/components/OrderTimeline";
 import { OrderActions } from "@/components/OrderActions";
-import { offerLabel } from "@/lib/festival";
+import { offerLabel } from "@/lib/offer-label";
 import { CircleCard } from "@/components/CircleParts";
 
 export default function AccountPage() {

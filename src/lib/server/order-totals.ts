@@ -4,12 +4,6 @@ import { products } from "@/lib/products";
 import { quote } from "@/lib/pricing";
 import type { Tier } from "@/lib/circle";
 
-/*
- * A checkout that loaded just before an offer ended may arrive just after.
- * Its total is honoured for this long; anything later is asked to review.
- */
-const OFFER_GRACE_MS = 15 * 60 * 1000;
-
 /** Most of one piece a single order can take, whatever the stock says. */
 const MAX_PER_LINE = 10;
 
@@ -58,7 +52,6 @@ export function checkItems(order: Order): string | null {
  */
 export function checkTotals(
   order: Order,
-  now: number = Date.now(),
   /** The customer's Sutra Gold level, read from the database by the caller. */
   member: Tier | null = null
 ): { discount: number; total: number; couponCode: string | null } | string {
@@ -75,13 +68,10 @@ export function checkTotals(
   }
 
   const asked = order.couponCode ?? null;
-  for (const at of [now, now - OFFER_GRACE_MS]) {
-    // During a festival quote() applies its offer whatever code is sent.
-    const priced = quote(lines, asked, at, member);
-    if (Math.abs(priced.total - order.total) <= 1 && Math.abs(priced.discount - (order.discount ?? 0)) <= 1) {
-      const couponCode = priced.discount > 0 ? priced.offerCode : null;
-      return { discount: priced.discount, total: priced.total, couponCode };
-    }
+  const priced = quote(lines, asked, member);
+  if (Math.abs(priced.total - order.total) <= 1 && Math.abs(priced.discount - (order.discount ?? 0)) <= 1) {
+    const couponCode = priced.discount > 0 ? priced.offerCode : null;
+    return { discount: priced.discount, total: priced.total, couponCode };
   }
-  return "Your total has changed (an offer may have just ended). Please review your order and place it again.";
+  return "Your total has changed. Please review your order and place it again.";
 }

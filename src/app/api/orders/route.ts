@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     console.error("[orders] circle lookup failed", error);
     return NextResponse.json({ ok: false, error: "Could not check your order. Please try again." }, { status: 500 });
   }
-  const checked = checkTotals(order, Date.now(), member);
+  const checked = checkTotals(order, member);
   if (typeof checked === "string") {
     return NextResponse.json({ ok: false, error: checked }, { status: 409 });
   }

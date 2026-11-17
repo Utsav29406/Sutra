@@ -952,7 +952,7 @@ const rawProducts: RawProduct[] = [
       sourceUrl: "https://www.flickr.com/photos/61997808@N00/4196437932",
     },
   },
-  // Diwali festive picks, added 2026-10-27; all ten are in the Diwali Edit (lib/festival.ts).
+  // Festive silks and brocades, added 2026-10-27.
   {
     id: "sutra-gold-tissue-silk-saree",
     name: "Gold Tissue Silk Saree",

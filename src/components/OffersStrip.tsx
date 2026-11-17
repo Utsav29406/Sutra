@@ -12,46 +12,6 @@ import {
   offers,
   type Offer,
 } from "@/lib/offers";
-import { useFestival } from "@/lib/useFestival";
-import DaysToGo from "@/components/DaysToGo";
-import { festivalOpensLabel, themeFestival, type Festival } from "@/lib/festival";
-
-/*
- * While a festival offer runs, checkout takes no codes (see lib/pricing), so
- * the coupon cards would advertise something that can't be used. The strip
- * shows the festival's own terms instead, and the codes come back by
- * themselves when it ends.
- */
-function festivalOffers(festival: Festival): Offer[] {
-  return [
-    {
-      headline: `${festival.name} · ${festival.percentOff}% off`,
-      description: `${festival.percentOff}% off every piece.`,
-      fine: "Women's and men's. No code needed.",
-    },
-    ...(festival.freeShipping
-      ? [
-          {
-            headline: "Free delivery",
-            description: "Free delivery on every order.",
-            fine: `Every order till ${festival.endsOn}. No code.`,
-          },
-        ]
-      : []),
-  ];
-}
-
-/**
- * Before a themed festival's offer opens (Diwali, from its themeFrom day), its
- * card leads the strip as a preview. The codes still work until then.
- */
-function comingFestivalOffer(festival: Festival): Offer {
-  return {
-    headline: `${festival.name} · ${festival.percentOff}% off everything`,
-    description: `${festival.percentOff}% off every piece.`,
-    fine: `From ${festivalOpensLabel(festival)} to ${festival.endsOn}${festival.freeShipping ? " · free delivery" : ""}`,
-  };
-}
 
 /**
  * The offers band under the hero. Replaces the old statistics counters.
@@ -61,7 +21,7 @@ function comingFestivalOffer(festival: Festival): Offer {
  * month would otherwise stay invisible until someone happened to redeploy.
  * Undated offers render immediately, so the strip is never empty at rest.
  */
-function OfferCard({ offer, upcoming, festive }: { offer: Offer; upcoming?: boolean; festive?: boolean }) {
+function OfferCard({ offer, upcoming }: { offer: Offer; upcoming?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -80,9 +40,7 @@ function OfferCard({ offer, upcoming, festive }: { offer: Offer; upcoming?: bool
       className={`group relative flex items-center gap-3 rounded-[3px] border px-3.5 py-2.5 transition-colors ${
         upcoming
           ? "border-white/[0.09] bg-white/[0.015]"
-          : festive
-            ? "border-accent/55 bg-gradient-to-r from-primary/[0.14] to-accent/[0.07]"
-            : "border-white/[0.13] bg-white/[0.03] hover:border-accent/45"
+          : "border-white/[0.13] bg-white/[0.03] hover:border-accent/45"
       }`}
     >
       {/* Ticket notches — a coupon, not another rounded card. */}
@@ -98,7 +56,7 @@ function OfferCard({ offer, upcoming, festive }: { offer: Offer; upcoming?: bool
       <div className="min-w-0 flex-1">
         <p
           className={`font-display text-[17px] leading-tight ${
-            upcoming || festive ? "text-accent-light" : "text-primary"
+            upcoming ? "text-accent-light" : "text-primary"
           }`}
         >
           {offer.headline}
@@ -140,25 +98,17 @@ function OfferCard({ offer, upcoming, festive }: { offer: Offer; upcoming?: bool
 
 export default function OffersStrip() {
   const hydrated = useHydrated();
-  const festival = useFestival();
 
   // Before hydration only undated offers are known to be current; afterwards
   // the real date decides. See the note at the top of the file.
-  const { live, upcoming, coming, comingCard } = useMemo(() => {
-    if (!hydrated) {
-      return { live: offers.filter(isAlwaysOn), upcoming: [] as Offer[], coming: null, comingCard: null };
-    }
-    if (festival) return { live: festivalOffers(festival), upcoming: [] as Offer[], coming: null, comingCard: null };
+  const { live, upcoming } = useMemo(() => {
+    if (!hydrated) return { live: offers.filter(isAlwaysOn), upcoming: [] as Offer[] };
     const now = new Date();
-    const coming = themeFestival(now.getTime());
-    const comingCard = coming ? comingFestivalOffer(coming) : null;
     return {
-      live: [...(comingCard ? [comingCard] : []), ...offers.filter((o) => isLive(o, now))],
+      live: offers.filter((o) => isLive(o, now)),
       upcoming: offers.filter((o) => isUpcoming(o, now)),
-      coming,
-      comingCard,
     };
-  }, [hydrated, festival]);
+  }, [hydrated]);
 
   if (live.length === 0 && upcoming.length === 0) return null;
 
@@ -173,14 +123,7 @@ export default function OffersStrip() {
             <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-[11px] uppercase tracking-[0.22em] text-accent">Offers on now</h2>
               <p className="text-[11px] text-foreground/35">
-                {festival
-                  ? `${festival.name} offer applies at checkout by itself · until ${festival.endsOn}`
-                  : coming
-                    ? <>
-                        Codes work until the {coming.name} offer opens on {festivalOpensLabel(coming)}
-                        <DaysToGo festival={coming} />
-                      </>
-                    : "Use the code at checkout · most pieces already 16–26% off"}
+                Use the code at checkout · most pieces already 16–26% off
               </p>
             </div>
             <motion.div
@@ -194,11 +137,7 @@ export default function OffersStrip() {
             >
               {live.map((offer) => (
                 // Headline, not code: a standing policy has no code to key on.
-                <OfferCard
-                  key={offer.code ?? offer.headline}
-                  offer={offer}
-                  festive={!!festival || offer === comingCard}
-                />
+                <OfferCard key={offer.code ?? offer.headline} offer={offer} />
               ))}
             </motion.div>
           </>

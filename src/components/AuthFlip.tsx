@@ -320,8 +320,8 @@ function SignUpForm({ active }: { active: boolean }) {
           className="mt-[3px] h-4 w-4 shrink-0 accent-[rgb(var(--color-accent))]"
         />
         <span>
-          Join <b className="font-medium text-accent-light">Sutra Gold</b>, free: free delivery from ₹2,999 and festival
-          prices a day early.
+          Join <b className="font-medium text-accent-light">Sutra Gold</b>, free: free delivery from ₹2,999 and member prices
+          as your orders add up.
         </span>
       </label>
       <motion.button

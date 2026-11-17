@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/lib/store/auth";
 import { formatPrice } from "@/lib/utils";
 import { isDemoPayment, nextStatuses, paymentLabel, STATUS_STYLES, type Order, type OrderStatus } from "@/lib/order";
-import { offerLabel } from "@/lib/festival";
+import { offerLabel } from "@/lib/offer-label";
 
 const FILTERS: Array<"All" | OrderStatus> = [
   "All",

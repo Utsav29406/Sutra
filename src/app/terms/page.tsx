@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
 };
 
-/* Kept in line with what the shop says elsewhere: cash on delivery or the Sutra Pay demo, 7-day returns on unworn pieces, festival offers by date. */
+/* Kept in line with what the shop says elsewhere: cash on delivery or the Sutra Pay demo, 7-day returns on unworn pieces. */
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" updated="5 November 2026">
+    <LegalPage title="Terms of Service" updated="17 November 2026">
       <p>
         These terms apply when you use Sutra (wearsutra.vercel.app). By creating an account or placing an order you agree
         to them.
@@ -41,8 +41,7 @@ export default function TermsPage() {
 
       <LegalSection title="Offers and codes">
         <p>
-          Festival offers, such as the Diwali offer, apply automatically on the dates shown on the site, and while one runs
-          discount codes cannot be added to it. Codes apply only as described next to them and cannot be exchanged for cash.
+          Discount codes apply only as described next to them and cannot be exchanged for cash.
         </p>
       </LegalSection>
 
@@ -51,7 +50,7 @@ export default function TermsPage() {
           items={[
             "Sutra Gold is free to join and to leave; email us to leave.",
             "Your level follows what you spent on delivered orders in the last 12 months. Cancelled and returned orders don't count, and a level can go down as well as up.",
-            "Member prices, discount codes and festival prices don't combine: the one that saves you more applies.",
+            "Member prices and discount codes don't combine: the one that saves you more applies.",
             "We may change the levels or perks; the version on the Sutra Gold page applies to orders placed from then on.",
           ]}
         />

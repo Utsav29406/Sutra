@@ -23,8 +23,6 @@ import { useHydrated } from "@/lib/useHydrated";
 import { useRequireAccount } from "@/lib/useRequireAccount";
 import { discountPercent, formatPrice } from "@/lib/utils";
 import type { Product } from "@/lib/products";
-import { festivalEnd, festivalPrice } from "@/lib/festival";
-import { useFestival } from "@/lib/useFestival";
 import { CircleLine } from "@/components/CircleParts";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { SizeGuideModal } from "@/components/SizeGuideModal";
@@ -62,7 +60,6 @@ export default function ProductDetail({ product, related }: { product: Product; 
   const requireAccount = useRequireAccount();
 
   const discount = discountPercent(product.price, product.compareAtPrice);
-  const festival = useFestival();
   const stock = Math.max(0, liveStock ?? product.stock);
   const wishlisted = hydrated && product.id in saved;
   const soldOut = hydrated && stock === 0;
@@ -222,22 +219,6 @@ export default function ProductDetail({ product, related }: { product: Product; 
             </div>
             <p className="mt-1 text-xs text-foreground/50">Inclusive of all taxes</p>
             <CircleLine price={product.price} />
-            {festival && (
-              <p className="mt-4 rounded-xl border border-accent/30 bg-accent/[0.07] px-4 py-3 text-sm leading-relaxed text-foreground/80 max-md:hidden">
-                <strong className="font-medium text-accent-light">
-                  {festival.name} offer: you pay {formatPrice(festivalPrice(product.price, festival))}
-                </strong>
-                <br />
-                {festival.percentOff}% off at checkout{festival.freeShipping ? ", with free delivery" : ""}. No code
-                needed. Until {festival.endsOn},{" "}
-                {new Date(festivalEnd(festival) - 1).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  timeZone: "Asia/Kolkata",
-                })}
-                .
-              </p>
-            )}
 
             <p className="mt-6 leading-relaxed text-foreground/75 max-md:order-1 max-md:text-[15px]">{product.description}</p>
 

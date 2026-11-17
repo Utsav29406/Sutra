@@ -14,8 +14,8 @@
  * `endsAt` it disappears on its own. Nothing has to be deleted by hand.
  *
  *   {
- *     code: "DIWALI26",
- *     headline: "Diwali",
+ *     code: "WEDDING26",
+ *     headline: "Wedding season",
  *     description: "Silks and zari across the collection.",
  *     fine: "20% off, no minimum.",
  *     startsAt: "2026-11-08",
@@ -23,8 +23,7 @@
  *   }
  *
  * A dated offer must ALSO be added to COUPONS in src/lib/pricing.ts, or the code
- * will not work when its start date arrives. For a no-code festival offer that
- * applies by itself, add it to src/lib/festival.ts instead.
+ * will not work when its start date arrives.
  */
 import { formatThreshold } from "@/lib/shipping";
 
@@ -35,7 +34,7 @@ export interface Offer {
    * button that would put nothing useful on the clipboard.
    */
   code?: string;
-  /** The large line — "10% off", "Free delivery", "Diwali". */
+  /** The large line — "10% off", "Free delivery", "Wedding season". */
   headline: string;
   /** One short sentence. */
   description: string;

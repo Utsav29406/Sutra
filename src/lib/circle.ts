@@ -16,8 +16,6 @@ export interface Tier {
   percentOff: number;
   /** Free delivery from this subtotal. 0 = every order. */
   freeDeliveryFrom: number;
-  /** A festival's prices open this many days early. */
-  earlyDays: number;
   perks: string[];
 }
 
@@ -28,8 +26,7 @@ export const TIERS: Tier[] = [
     minSpend: 0,
     percentOff: 0,
     freeDeliveryFrom: 2999,
-    earlyDays: 1,
-    perks: ["Free delivery from ₹2,999", "Festival prices 1 day early", "All discount codes still work"],
+    perks: ["Free delivery from ₹2,999", "All discount codes still work"],
   },
   {
     id: "weave",
@@ -37,8 +34,7 @@ export const TIERS: Tier[] = [
     minSpend: 10000,
     percentOff: 5,
     freeDeliveryFrom: 0,
-    earlyDays: 2,
-    perks: ["5% member price on every piece", "Free delivery on every order", "Festival prices 2 days early"],
+    perks: ["5% member price on every piece", "Free delivery on every order"],
   },
   {
     id: "loom",
@@ -46,8 +42,7 @@ export const TIERS: Tier[] = [
     minSpend: 25000,
     percentOff: 10,
     freeDeliveryFrom: 0,
-    earlyDays: 3,
-    perks: ["10% member price on every piece", "Free delivery on every order", "Festival prices 3 days early"],
+    perks: ["10% member price on every piece", "Free delivery on every order"],
   },
 ];
 
