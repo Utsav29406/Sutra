@@ -11,7 +11,7 @@
 // single piece, so delivery was free on nearly every order. Now it is an offer
 // for bridal pieces and fuller bags; most single-piece orders pay SHIPPING_FEE.
 export const FREE_SHIPPING_THRESHOLD = 9999;
-export const SHIPPING_FEE = 149;
+export const SHIPPING_FEE = 199;
 
 /** "₹2,999" — Indian digit grouping, for copy that quotes the threshold. */
 export function formatThreshold(): string {
