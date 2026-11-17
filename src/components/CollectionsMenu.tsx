@@ -164,7 +164,7 @@ export function CollectionsPanel({
             onClick={(e) => {
               if ((e.target as HTMLElement).closest("a")) close();
             }}
-            className="sutra-collections absolute inset-x-0 top-full max-lg:hidden"
+            className="sutra-collections pointer-events-auto absolute inset-x-4 top-full mt-2 overflow-hidden rounded-[28px] max-lg:hidden md:inset-x-6"
           >
             <div className="mx-auto grid max-w-[88rem] grid-cols-[repeat(2,minmax(0,170px))_repeat(3,minmax(0,1fr))] gap-x-6 px-8 pt-7 xl:grid-cols-[repeat(2,196px)_repeat(3,minmax(0,1fr))_268px] xl:gap-x-[30px] xl:px-10">
               {CATEGORIES.map((c) => (

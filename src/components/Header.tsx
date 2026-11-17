@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, m as motion } from "framer-motion";
-import { ChevronDown, Heart, ShoppingBag, Sparkles, User } from "lucide-react";
+import { ChevronDown, Heart, Search, ShoppingBag, Sparkles, User } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart";
 import { useWishlistStore } from "@/lib/store/wishlist";
 import { useAuthStore } from "@/lib/store/auth";
@@ -13,7 +13,7 @@ import { Logo } from "@/components/Logo";
 import SearchBar from "@/components/SearchBar";
 import OffersButton from "@/components/OffersButton";
 import { CollectionsPanel, useCollectionsMenu } from "@/components/CollectionsMenu";
-import { MOBILE_BAR_HIDDEN } from "@/sutra-mobile/MobileTabBar";
+import { MOBILE_BAR_HIDDEN, PHONE_SEARCH_EVENT } from "@/sutra-mobile/MobileTabBar";
 import { DRAWN_FESTIVALS } from "@/lib/festival";
 
 const navLinks = [
@@ -89,6 +89,22 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, positionThread]);
 
+  // Phones: the search row opens from the tab bar's Search button (or the
+  // header's search icon where that bar steps aside) and closes on navigation.
+  const [phoneSearch, setPhoneSearch] = useState(false);
+  useEffect(() => {
+    const toggle = () => setPhoneSearch((o) => !o);
+    window.addEventListener(PHONE_SEARCH_EVENT, toggle);
+    return () => window.removeEventListener(PHONE_SEARCH_EVENT, toggle);
+  }, []);
+  useEffect(() => setPhoneSearch(false), [pathname]);
+  useEffect(() => {
+    if (!phoneSearch) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPhoneSearch(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phoneSearch]);
+
   useEffect(() => {
     function onScroll() {
       setScrolled(window.scrollY > 40);
@@ -129,11 +145,7 @@ export default function Header() {
   return (
     <header
       ref={headerRef}
-      className={`sutra-header sticky top-0 z-40 border-b bg-cream/60 backdrop-blur-xl transition-colors ${
-        scrolled
-          ? "border-accent/25 shadow-[0_10px_30px_-22px_rgba(0,0,0,0.9)]"
-          : "border-white/[0.07]"
-      }`}
+      className="sutra-header pointer-events-none sticky top-0 z-40 px-2.5 pt-2.5 sm:px-4 md:px-6 md:pt-3"
     >
       {/* Three layouts:
           - Phones: three rows. Logo and icons on top, the links across the full
@@ -146,7 +158,16 @@ export default function Header() {
             would have pushed them visibly left.
           - 1024–1279px: logo and links together on the left instead, so the
             search box gets the room centring would leave empty. */}
-      <nav className="mx-auto flex max-w-[88rem] 2xl:max-w-[100rem] flex-wrap items-center justify-between gap-x-4 px-4 py-1 sm:px-6 md:flex-nowrap lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 lg:max-xl:grid-cols-[auto_auto_1fr]">
+      {/* The navbar floats: a frosted pill (a rounded panel on phones, where
+          search sits inside it) held a little clear of the page's edges. The
+          header itself ignores clicks so the page around the pill stays usable. */}
+      <nav
+        className={`sutra-floatnav pointer-events-auto mx-auto flex max-w-[86rem] 2xl:max-w-[98rem] flex-wrap items-center justify-between gap-x-4 rounded-[24px] border border-accent-light/55 bg-cream/70 px-4 py-1 backdrop-blur-xl transition-shadow sm:px-6 md:flex-nowrap md:rounded-full lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 lg:max-xl:grid-cols-[auto_auto_1fr] ${
+          scrolled
+            ? "shadow-[0_0_0_1px_rgb(212_175_55/0.12),0_14px_38px_-10px_rgb(212_175_55/0.32)]"
+            : "shadow-[0_0_0_1px_rgb(212_175_55/0.12),0_10px_34px_-10px_rgb(212_175_55/0.28)]"
+        }`}
+      >
         <div className="contents md:flex md:min-w-0 md:items-center md:gap-8 lg:contents">
           <Link className="sutra-logo order-1 flex items-center justify-self-start py-1.5 md:order-none" aria-label="Sutra — home" href="/">
             <Logo className="sutra-logo-size" />
@@ -226,6 +247,20 @@ export default function Header() {
               both, and the bag matters more there. */}
           <OffersButton className={`md:hidden ${MOBILE_BAR_HIDDEN(pathname) ? "max-md:hidden" : ""}`} />
 
+          {/* Phones open search from the tab bar; where that bar steps aside
+              (product, checkout), this icon does it instead. */}
+          {MOBILE_BAR_HIDDEN(pathname) && (
+            <button
+              type="button"
+              onClick={() => setPhoneSearch((o) => !o)}
+              aria-expanded={phoneSearch}
+              aria-label="Search"
+              className="rounded-full p-2.5 transition-colors hover:bg-white/10 md:hidden"
+            >
+              <Search size={18} aria-hidden="true" />
+            </button>
+          )}
+
           <motion.button
             onClick={openCart}
             whileHover={{ scale: 1.08 }}
@@ -261,7 +296,8 @@ export default function Header() {
             </AnimatePresence>
           </motion.button>
 
-          <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} className="max-md:hidden">
+          {/* Shown on phones too, beside the account button: the tab bar has no wishlist tab. */}
+          <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
             <Link
               href="/wishlist"
               className="relative flex rounded-full p-2.5 transition-colors hover:bg-white/10 md:p-1.5"
@@ -309,12 +345,15 @@ export default function Header() {
 
           {/* Phones: straight to the account page (or sign in), no menu. Hidden
               until the saved session is read, so it never shows the wrong one. */}
+          {/* Icon only on product and checkout pages, where search and the bag
+              share the row and the word would push it onto two lines. */}
           <Link
             href={signedIn ? "/account" : "/login"}
+            aria-label={signedIn ? "Account" : "Sign in"}
             className={`ml-1 md:hidden ${signedIn ? acctPill : "sutra-goldpill"} ${hydrated ? "" : "opacity-0"}`}
           >
-            <User size={14} />
-            {signedIn ? "Account" : "Sign in"}
+            <User size={14} aria-hidden="true" />
+            <span className={MOBILE_BAR_HIDDEN(pathname) ? "sr-only" : ""}>{signedIn ? "Account" : "Sign in"}</span>
           </Link>
 
           <div ref={accountMenu} className="relative ml-1 max-md:hidden">
@@ -393,13 +432,14 @@ export default function Header() {
 
         </div>
 
-        {/* Phones: search is its own full-width row, always in place. It used to
-            slide away on scroll, but the header changing height made the browser
-            shift the page, which read as scrolling back up, so the row flickered
-            half-open over the content. */}
-        <div className="order-4 w-full pb-3 md:hidden">
-          <SearchBar compact />
-        </div>
+        {/* Phones: search is a full-width row that opens on demand (the tab
+            bar's Search button), never on scroll: the header changing height
+            while scrolling made the page jump. */}
+        {phoneSearch && (
+          <div className="order-4 w-full pb-3 md:hidden">
+            <SearchBar compact autoFocus />
+          </div>
+        )}
       </nav>
 
       <CollectionsPanel

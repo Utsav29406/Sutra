@@ -81,7 +81,8 @@
     animation: none;
     will-change: auto;
   }
-  .sutra-header {
+  /* The floating navbar is near-solid here instead of frosted. */
+  .sutra-floatnav {
     background-color: rgb(var(--color-cream) / 0.97);
   }
   .backdrop-blur-sm,
@@ -205,9 +206,9 @@
   html[data-festival] .sutra-tabs {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
-  /* Tonight's colour runs along the bottom of the header. */
-  html[data-festival] .sutra-header {
-    border-bottom: 2px solid var(--night);
+  /* Tonight's colour edges the floating navbar. */
+  html[data-festival] .sutra-floatnav {
+    border-color: var(--night);
   }
 }
 

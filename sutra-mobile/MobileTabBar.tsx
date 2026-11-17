@@ -2,17 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Home, LayoutGrid, ShoppingBag } from "lucide-react";
+import { Home, LayoutGrid, Search, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart";
-import { useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/lib/useHydrated";
 import { DRAWN_FESTIVALS } from "@/lib/festival";
 import { FestivalIcon } from "@/sutra-mobile/festival/FestivalParts";
 
 /**
  * Phones only: the app-style tab bar along the bottom of the screen, as on
- * Flipkart. It takes over from the header's links, wishlist and bag, which
- * phones no longer show there; the account icon stays at the top right. Hidden from md up, so tablets and desktop are
+ * Flipkart. It takes over from the header's links and bag, which phones no
+ * longer show there; wishlist and account stay at the top right. Hidden from md up, so tablets and desktop are
  * untouched.
  *
  * Product pages and checkout have their own bar in this spot (Add to Bag /
@@ -21,31 +20,33 @@ import { FestivalIcon } from "@/sutra-mobile/festival/FestivalParts";
 export const MOBILE_BAR_HIDDEN = (pathname: string) =>
   pathname.startsWith("/product/") || pathname.startsWith("/checkout") || pathname.startsWith("/admin");
 
+/** Fired by the Search tab; the header opens or closes its phone search row. */
+export const PHONE_SEARCH_EVENT = "sutra:phone-search";
+
 export default function MobileTabBar() {
   const pathname = usePathname();
   const hydrated = useHydrated();
   const openCart = useCartStore((s) => s.openCart);
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
-  const wishCount = useWishlistStore((s) => Object.keys(s.saved).length);
 
   if (MOBILE_BAR_HIDDEN(pathname)) return null;
 
   const tabs = [
     { href: "/", label: "Home", icon: Home, active: pathname === "/" },
     { href: "/shop", label: "Shop", icon: LayoutGrid, active: pathname.startsWith("/shop") },
-    { href: "/wishlist", label: "Wishlist", icon: Heart, active: pathname.startsWith("/wishlist"), badge: hydrated ? wishCount : 0 },
   ];
 
   return (
     <>
       {/* Keeps the footer's last lines clear of the fixed bar. */}
-      <div aria-hidden="true" className="h-[calc(3.6rem+env(safe-area-inset-bottom))] md:hidden print:hidden" />
+      <div aria-hidden="true" className="h-[calc(4.6rem+env(safe-area-inset-bottom))] md:hidden print:hidden" />
+      {/* Floats like the navbar: a gold-edged pill held clear of the screen's edges. */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-cream/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-18px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden print:hidden"
+        className="fixed inset-x-2.5 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[24px] border border-accent-light/55 bg-cream/95 shadow-[0_0_0_1px_rgb(212_175_55/0.12),0_10px_34px_-10px_rgb(212_175_55/0.28)] backdrop-blur-xl md:hidden print:hidden"
       >
         <ul className="sutra-tabs grid h-[3.6rem] grid-cols-4">
-          {tabs.slice(0, 2).map((tab) => (
+          {tabs.map((tab) => (
             <Tab key={tab.href} {...tab} />
           ))}
           {/* During a festival: its store, raised in the middle (a fifth column, see sutra-mobile.css). */}
@@ -68,6 +69,19 @@ export default function MobileTabBar() {
           <li>
             <button
               type="button"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                window.dispatchEvent(new Event(PHONE_SEARCH_EVENT));
+              }}
+              className="relative flex h-full w-full flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium text-foreground/65 transition-colors active:text-primary"
+            >
+              <Search size={21} strokeWidth={1.7} aria-hidden="true" />
+              Search
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
               onClick={openCart}
               className="relative flex h-full w-full flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium text-foreground/65 transition-colors active:text-primary"
               aria-label={hydrated && cartCount > 0 ? `Bag, ${cartCount} items` : "Bag"}
@@ -79,9 +93,6 @@ export default function MobileTabBar() {
               Bag
             </button>
           </li>
-          {tabs.slice(2).map((tab) => (
-            <Tab key={tab.href} {...tab} />
-          ))}
         </ul>
       </nav>
     </>

@@ -181,7 +181,8 @@ export default function ShopClient() {
   return (
     <div>
       <AddressParams onChange={setSearchParams} />
-      <section className="border-b border-white/10 bg-cream-dark/40">
+      {/* Runs up behind the floating navbar, so its tint has no edge beside the pill. */}
+      <section className="-mt-[var(--sutra-header-h,0px)] border-b border-white/10 bg-cream-dark/40 pt-[var(--sutra-header-h,0px)]">
         <div className="mx-auto max-w-7xl px-6 py-12 text-center max-md:py-5">
           <p className="text-sm uppercase tracking-[0.3em] text-accent max-md:text-[11px]">The Collection</p>
           <h1 className="mt-2 font-display text-4xl sm:text-5xl max-md:mt-1 max-md:text-[1.75rem]">All Products</h1>

@@ -194,7 +194,7 @@ export default function ChatWidget() {
         <button
           onClick={() => setOpen(true)}
           aria-label="Open Sutra Help"
-          className="fixed bottom-7 right-3 z-40 flex h-12 w-12 max-md:bottom-[calc(4.4rem+env(safe-area-inset-bottom))] max-md:h-11 max-md:w-11 items-center justify-center rounded-full border border-accent-light/50 bg-primary-dark text-accent-light shadow-[0_14px_30px_-10px_rgba(0,0,0,0.6)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-10px_rgba(0,0,0,0.66)]"
+          className="fixed bottom-7 right-3 z-40 flex h-12 w-12 max-md:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-md:h-11 max-md:w-11 items-center justify-center rounded-full border border-accent-light/50 bg-primary-dark text-accent-light shadow-[0_14px_30px_-10px_rgba(0,0,0,0.6)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-10px_rgba(0,0,0,0.66)]"
         >
           <MessageCircle size={21} />
         </button>

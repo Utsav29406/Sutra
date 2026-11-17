@@ -34,7 +34,8 @@ import { formatPrice } from "@/lib/utils";
  * shop page's own search box also writes), and on other pages it is empty. As
  * two independent boxes they drifted apart, and a word could seem to vanish.
  */
-type Props = { compact?: boolean };
+/** autoFocus: focus the box as soon as it appears (the phone search row opens on demand). */
+type Props = { compact?: boolean; autoFocus?: boolean };
 
 const MAX_OPTIONS = 5;
 const POPULAR = ["Saree", "Lehenga", "Sherwani", "Kurta", "Patola", "Bandhani", "Ajrakh", "Pashmina"];
@@ -70,6 +71,7 @@ function AddressSearchBar(props: Props) {
 
 function SearchField({
   compact = false,
+  autoFocus = false,
   value,
   setValue,
 }: Props & { value: string; setValue: (v: string) => void }) {
@@ -86,6 +88,10 @@ function SearchField({
   const optionCount = shown.length > 0 ? shown.length + 1 : 0;
   const allHref = typed ? `/shop?q=${encodeURIComponent(typed)}` : "/shop";
   const placeholder = useRotatingHint(rootRef, value !== "");
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
 
   // Close when the pointer goes down anywhere else on the page.
   useEffect(() => {
