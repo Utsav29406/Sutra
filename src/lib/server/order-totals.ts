@@ -35,7 +35,9 @@ export function checkItems(order: Order): string | null {
     if (typeof item.size !== "string" || !product.sizes.includes(item.size)) {
       return `Choose a size for ${product.name} again: that one isn't available.`;
     }
-    const most = Math.min(product.stock, MAX_PER_LINE);
+    // Stock itself is checked when the order is saved (lib/server/stock),
+    // against what is really left; here only the per-order limit.
+    const most = MAX_PER_LINE;
     if (!Number.isInteger(item.quantity) || item.quantity < 1) return "An item quantity is not valid.";
     if (item.quantity > most || (perLine.get(`${item.productId}|${item.size}`) ?? 0) > most) {
       return most < 1

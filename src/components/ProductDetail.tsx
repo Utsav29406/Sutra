@@ -57,7 +57,7 @@ export default function ProductDetail({ product, related }: { product: Product; 
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const addItem = useCartStore((s) => s.addItem);
-  const consumed = useStockStore((s) => s.consumed);
+  const liveStock = useStockStore((s) => s.live?.[product.id]);
   const saved = useWishlistStore((s) => s.saved);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const hydrated = useHydrated();
@@ -65,7 +65,7 @@ export default function ProductDetail({ product, related }: { product: Product; 
 
   const discount = discountPercent(product.price, product.compareAtPrice);
   const festival = useFestival();
-  const stock = Math.max(0, product.stock - (consumed[product.id] ?? 0));
+  const stock = Math.max(0, liveStock ?? product.stock);
   const wishlisted = hydrated && product.id in saved;
   const soldOut = hydrated && stock === 0;
   const maxQty = Math.max(1, stock);

@@ -18,6 +18,8 @@ interface CartState {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
+  /** Brings each line's limit (and quantity) in line with live stock. */
+  applyStock: (live: Record<string, number>) => void;
   /** Returns false when the item is already at (or would exceed) available stock. */
   addItem: (item: Omit<CartItem, "quantity"> & { quantity: number }) => boolean;
   updateQuantity: (productId: string, size: string, quantity: number) => void;
@@ -93,6 +95,15 @@ export const useCartStore = create<CartState>()(
                     ? { ...i, quantity: Math.min(quantity, i.stock) }
                     : i
                 ),
+        })),
+      applyStock: (live) =>
+        set((state) => ({
+          items: state.items.map((i) => {
+            if (!(i.productId in live)) return i;
+            const stock = Math.max(0, Math.min(live[i.productId], MAX_PER_LINE));
+            // A sold-out line stays, so the bag can say so; checkout refuses it.
+            return { ...i, stock, quantity: stock > 0 ? Math.min(i.quantity, stock) : i.quantity };
+          }),
         })),
       removeItem: (productId, size) =>
         set((state) => ({

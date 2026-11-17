@@ -1,65 +1,30 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { products } from "@/lib/products";
+import { useCartStore } from "@/lib/store/cart";
 
 /*
- * Stock is the catalogue's figure, the same one the server checks orders
- * against. This store used to subtract each purchase in the buyer's own
- * browser only, so that browser alone showed pieces as sold out (forever)
- * while everyone else - and the server - still sold them, and a cancel only
- * "gave stock back" in whichever browser clicked it. Nothing subtracts now,
- * and version 2 drops the counts old visits left behind.
+ * Live stock from the server (api/stock), where every order takes stock and
+ * every cancel or return gives it back. Until it arrives, and if it can't be
+ * read, pages fall back to the catalogue's figure; the server checks stock
+ * again when the order is placed either way. Not saved in the browser: a
+ * stale copy is exactly what this replaced.
  */
-
-interface StockItem {
-  productId: string;
-  quantity: number;
-}
-
 interface StockState {
-  consumed: Record<string, number>;
-  consume: (items: StockItem[]) => void;
-  release: (items: StockItem[]) => void;
-  available: (productId: string) => number;
-  totalAvailable: () => number;
-  reset: () => void;
+  live: Record<string, number> | null;
+  /** Reads stock from the server; on success the bag's limits follow it. */
+  load: () => Promise<void>;
 }
 
-const stockById = new Map(products.map((p) => [p.id, p.stock]));
-
-export const useStockStore = create<StockState>()(
-  persist(
-    (set, get) => ({
-      consumed: {},
-      consume: (items) =>
-        set((state) => {
-          const consumed = { ...state.consumed };
-          for (const { productId, quantity } of items) {
-            consumed[productId] = (consumed[productId] ?? 0) + quantity;
-          }
-          return { consumed };
-        }),
-      release: (items) =>
-        set((state) => {
-          const consumed = { ...state.consumed };
-          for (const { productId, quantity } of items) {
-            const remaining = (consumed[productId] ?? 0) - quantity;
-            if (remaining > 0) consumed[productId] = remaining;
-            else delete consumed[productId];
-          }
-          return { consumed };
-        }),
-      available: (productId) =>
-        Math.max(0, (stockById.get(productId) ?? 0) - (get().consumed[productId] ?? 0)),
-      totalAvailable: () => {
-        const consumed = get().consumed;
-        return products.reduce(
-          (sum, p) => sum + Math.max(0, p.stock - (consumed[p.id] ?? 0)),
-          0
-        );
-      },
-      reset: () => set({ consumed: {} }),
-    }),
-    { name: "sutra-stock", version: 2, migrate: () => ({ consumed: {} }) }
-  )
-);
+export const useStockStore = create<StockState>()((set) => ({
+  live: null,
+  load: async () => {
+    try {
+      const res = await fetch("/api/stock", { cache: "no-store" });
+      const data = await res.json();
+      if (!data?.ok || !data.stock) return;
+      set({ live: data.stock as Record<string, number> });
+      useCartStore.getState().applyStock(data.stock);
+    } catch {
+      // Keep what we have; the server still checks at checkout.
+    }
+  },
+}));

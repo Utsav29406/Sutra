@@ -66,6 +66,13 @@ function poolConfig(): PoolConfig {
     // Serverless functions each hold their own pool, so keep it small: a large
     // limit times many warm instances will exhaust the database's connections.
     max: process.env.VERCEL ? 3 : 10,
+    // When every connection is busy, or the database can't be reached, a
+    // request waits at most this long for one and then fails with an error
+    // the page can show, instead of hanging until the function times out.
+    // Ten seconds leaves room for Neon waking a suspended database.
+    connectionTimeoutMillis: 10_000,
+    // Idle connections are closed after 30 s rather than held open.
+    idleTimeoutMillis: 30_000,
     // Hosted Postgres (Neon, Supabase) requires TLS; a local server usually
     // has none. sslmode=disable in the URL turns it off explicitly.
     ssl: isLocal || options.get("sslmode") === "disable" ? false : true,

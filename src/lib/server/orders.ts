@@ -1,6 +1,7 @@
 import "server-only";
 import { query, mutate, transaction, toSqlDate, fromSqlDate, normalizeEmail } from "@/lib/db";
 import type { Order, OrderItem, OrderStatus, PaymentStatus } from "@/lib/order";
+import { returnStock, takeStock } from "@/lib/server/stock";
 
 interface OrderRow {
   id: string;
@@ -98,11 +99,13 @@ export async function listOrders(email?: string): Promise<Order[]> {
 /** Inserts the order and its line items atomically. */
 export async function createOrder(order: Order): Promise<Order> {
   await transaction(async (client) => {
+    // Stock first: if a piece has run out, nothing is saved (OutOfStock).
+    await takeStock(client, order.items.map((i) => ({ productId: i.productId ?? "", quantity: i.quantity })));
     await client.query(
       `INSERT INTO orders
          (id, email, placed_at, updated_at, total, discount, coupon_code,
-          payment_method, address, customer_name, phone, status, payment_status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          payment_method, address, customer_name, phone, status, payment_status, stock_taken)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)`,
       [
         order.id,
         normalizeEmail(order.email ?? ""),
@@ -159,20 +162,27 @@ export async function setOrderStatus(
   // the window.
   const keepsDate =
     (from === "Delivered" && status === "Return Requested") || (from === "Return Requested" && status === "Delivered");
-  const result = from && keepsDate
-    ? await mutate("UPDATE orders SET status = $1 WHERE id = $2 AND status = $3", [status, id, from])
-    : from
-    ? await mutate("UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3 AND status = $4", [
-        status,
-        toSqlDate(new Date().toISOString()),
-        id,
-        from,
-      ])
-    : await mutate("UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3", [
-        status,
-        toSqlDate(new Date().toISOString()),
-        id,
-      ]);
+  // The status change and the stock it gives back are saved together.
+  const changed = await transaction(async (client) => {
+    const result = from && keepsDate
+      ? await client.query("UPDATE orders SET status = $1 WHERE id = $2 AND status = $3", [status, id, from])
+      : from
+      ? await client.query("UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3 AND status = $4", [
+          status,
+          toSqlDate(new Date().toISOString()),
+          id,
+          from,
+        ])
+      : await client.query("UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3", [
+          status,
+          toSqlDate(new Date().toISOString()),
+          id,
+        ]);
+    if (!result.rowCount) return false;
+    if (status === "Cancelled" || status === "Returned") await returnStock(client, id);
+    return true;
+  });
+  const result = { affectedRows: changed ? 1 : 0 };
   if (result.affectedRows === 0) return null;
 
   const rows = await query<OrderRow[]>("SELECT * FROM orders WHERE id = $1 LIMIT 1", [id]);
@@ -216,7 +226,26 @@ export async function markOrderRefunded(id: string): Promise<void> {
   await mutate(`UPDATE orders SET payment_status = 'refunded' WHERE id = $1 AND payment_status = 'paid'`, [id]);
 }
 
-/** Removes an online order that never reached the payment window. */
+/** Removes an online order that was never paid, giving its stock back. */
 export async function deleteUnpaidOrder(id: string): Promise<void> {
-  await mutate(`DELETE FROM orders WHERE id = $1 AND payment_status = 'pending'`, [id]);
+  await transaction(async (client) => {
+    // Locked while its stock goes back, so a payment can't land in between.
+    const found = await client.query(`SELECT id FROM orders WHERE id = $1 AND payment_status = 'pending' FOR UPDATE`, [id]);
+    if (!found.rowCount) return;
+    await returnStock(client, id);
+    await client.query(`DELETE FROM orders WHERE id = $1 AND payment_status = 'pending'`, [id]);
+  });
+}
+
+/**
+ * Online orders left unpaid for over an hour (the shopper closed the tab in
+ * the payment window) hold stock nobody is buying; they are removed and the
+ * stock goes back. Only for Sutra Pay, which pays on the spot - a Cashfree
+ * payment can still arrive much later.
+ */
+export async function releaseStaleUnpaidOrders(): Promise<void> {
+  const stale = await query<{ id: string }[]>(
+    `SELECT id FROM orders WHERE payment_status = 'pending' AND placed_at < now() - interval '1 hour' LIMIT 50`
+  );
+  for (const { id } of stale) await deleteUnpaidOrder(id);
 }

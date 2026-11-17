@@ -25,7 +25,7 @@ export default function AdminPage() {
   const orders = useAuthStore((s) => s.orders);
   const reviews = useAuthStore((s) => s.reviews);
   const loaded = useAuthStore((s) => s.loaded);
-  const consumed = useStockStore((s) => s.consumed);
+  const live = useStockStore((s) => s.live);
   const hydrated = useHydrated();
   const [tab, setTab] = useState<Tab>("Orders");
 
@@ -38,12 +38,12 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     const revenue = orders.filter(countsAsRevenue).reduce((sum, o) => sum + o.total, 0);
-    const stock = products.reduce((sum, p) => sum + Math.max(0, p.stock - (consumed[p.id] ?? 0)), 0);
+    const stock = products.reduce((sum, p) => sum + Math.max(0, live?.[p.id] ?? p.stock), 0);
     const openOrders = orders.filter(
       (o) => o.paymentStatus !== "pending" && (o.status === "Processing" || o.status === "Return Requested")
     ).length;
     return { revenue, stock, openOrders };
-  }, [orders, consumed]);
+  }, [orders, live]);
 
   if (!hydrated || user?.role !== "ADMIN" || !loaded) return <DashboardSkeleton />;
 
@@ -100,7 +100,7 @@ export default function AdminPage() {
       </div>
 
       {tab === "Orders" && <OrdersTab orders={orders} />}
-      {tab === "Catalogue" && <CatalogueTab consumed={consumed} />}
+      {tab === "Catalogue" && <CatalogueTab live={live} />}
       {tab === "Reviews" && <ReviewsTab reviews={reviews} />}
     </div>
   );

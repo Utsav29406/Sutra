@@ -7,6 +7,7 @@ import { m as motion } from "framer-motion";
 import { CreditCard, IndianRupee, QrCode, ShoppingBag, Tag, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCartStore } from "@/lib/store/cart";
+import { useStockStore } from "@/lib/store/stock";
 import { useAuthStore } from "@/lib/store/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { formatPrice } from "@/lib/utils";
@@ -27,6 +28,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
+  const loadStock = useStockStore((s) => s.load);
   const user = useAuthStore((s) => s.user);
   const authLoaded = useAuthStore((s) => s.loaded);
   const addOrder = useAuthStore((s) => s.addOrder);
@@ -163,6 +165,8 @@ export default function CheckoutPage() {
     if (!result.ok) {
       setPlacing(false);
       toast.error(result.error ?? "Could not place your order. Please try again.");
+      // A piece may have just sold out: refresh stock so the bag shows it.
+      void loadStock();
       return;
     }
 
@@ -199,6 +203,7 @@ export default function CheckoutPage() {
     }
 
     clearCart();
+    void loadStock();
     toast.success(`Order ${order.id} placed. Dhanyavaad!`);
     router.push(`/order/${order.id}`);
   }

@@ -75,7 +75,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const updated = await settleSutraPay(id, ref);
-    if (!updated) return NextResponse.json({ ok: false, error: "This order can't be paid now." }, { status: 409 });
+    if (!updated) {
+      // Two tabs, or a double click, paying the same order: the other request
+      // won. The order is paid, so say so instead of reporting a failure.
+      const current = await getOrder(id);
+      if (current?.paymentStatus === "paid") return NextResponse.json({ ok: true, paid: true, order: current });
+      return NextResponse.json({ ok: false, error: "This order can't be paid now." }, { status: 409 });
+    }
     return NextResponse.json({ ok: true, paid: true, order: updated });
   } catch (error) {
     console.error("[payments sutrapay]", error);

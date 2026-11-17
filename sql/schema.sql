@@ -60,6 +60,11 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status text DEFAULT NULL
   CHECK (payment_status IN ('pending', 'paid', 'refunded'));
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_ref varchar(64) DEFAULT NULL;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at timestamptz DEFAULT NULL;
+-- True while this order holds stock (taken when it was placed). Cleared when
+-- the stock goes back (cancelled, returned, abandoned), so it can only go back
+-- once - and orders placed before stock was tracked never "return" stock
+-- they never took.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_taken boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_orders_email ON orders (email);
 CREATE INDEX IF NOT EXISTS idx_orders_placed_at ON orders (placed_at);
 
@@ -122,4 +127,18 @@ CREATE TABLE IF NOT EXISTS otp_locks (
   strikes      smallint     NOT NULL DEFAULT 0,
   paused_until timestamptz  DEFAULT NULL,
   updated_at   timestamptz  NOT NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- Stock: how many of each piece are left. The catalogue (src/lib/products.ts)
+-- gives each piece its starting figure; a row appears here the first time the
+-- piece is ordered or listed, and from then on this table is the truth.
+-- Placing an order takes stock only if enough is left (in one statement, so
+-- two shoppers can't both buy the last one); cancelling or returning gives it
+-- back. Restock with: UPDATE product_stock SET stock = 12 WHERE product_id = '...';
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS product_stock (
+  product_id varchar(64) PRIMARY KEY,
+  stock      integer     NOT NULL CHECK (stock >= 0),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );

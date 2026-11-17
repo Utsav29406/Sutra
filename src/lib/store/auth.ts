@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useStockStore } from "@/lib/store/stock";
 import { persist } from "zustand/middleware";
 import type { Order, OrderStatus } from "@/lib/order";
 import type { Review } from "@/lib/review";
@@ -227,6 +228,8 @@ export const useAuthStore = create<AuthState>()(
         if (!data?.ok) return null;
         const updated = data.order as Order;
         set((state) => ({ orders: state.orders.map((o) => (o.id === orderId ? updated : o)) }));
+        // A cancel or return puts stock back.
+        if (status === "Cancelled" || status === "Returned") void useStockStore.getState().load();
         return updated;
       },
 

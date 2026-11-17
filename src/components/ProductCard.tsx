@@ -29,7 +29,7 @@ export default function ProductCard({
   eager?: boolean;
 }) {
   const addItem = useCartStore((s) => s.addItem);
-  const consumed = useStockStore((s) => s.consumed);
+  const liveStock = useStockStore((s) => s.live?.[product.id]);
   const saved = useWishlistStore((s) => s.saved);
   const toggle = useWishlistStore((s) => s.toggle);
   const hydrated = useHydrated();
@@ -37,7 +37,7 @@ export default function ProductCard({
   const festival = useFestival();
 
   const discount = discountPercent(product.price, product.compareAtPrice);
-  const stock = Math.max(0, product.stock - (consumed[product.id] ?? 0));
+  const stock = Math.max(0, liveStock ?? product.stock);
   const wishlisted = hydrated && product.id in saved;
 
   return (

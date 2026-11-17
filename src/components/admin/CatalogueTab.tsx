@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/utils";
 
 type SortKey = "name" | "category" | "price" | "stock" | "rating";
 
-export function CatalogueTab({ consumed }: { consumed: Record<string, number> }) {
+export function CatalogueTab({ live }: { live: Record<string, number> | null }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [ascending, setAscending] = useState(true);
@@ -17,7 +17,7 @@ export function CatalogueTab({ consumed }: { consumed: Record<string, number> })
     const q = query.trim().toLowerCase();
     const direction = ascending ? 1 : -1;
     const filtered = products
-      .map((p) => ({ product: p, stock: Math.max(0, p.stock - (consumed[p.id] ?? 0)) }))
+      .map((p) => ({ product: p, stock: Math.max(0, live?.[p.id] ?? p.stock) }))
       .filter(
         ({ product }) =>
           !q || `${product.name} ${product.category.name} ${product.craftName ?? ""} ${product.state ?? ""}`.toLowerCase().includes(q)
@@ -36,7 +36,7 @@ export function CatalogueTab({ consumed }: { consumed: Record<string, number> })
           return a.product.name.localeCompare(b.product.name) * direction;
       }
     });
-  }, [query, sortKey, ascending, consumed]);
+  }, [query, sortKey, ascending, live]);
 
   const soldOut = rows.filter((r) => r.stock === 0).length;
   const lowStock = rows.filter((r) => r.stock > 0 && r.stock <= 3).length;

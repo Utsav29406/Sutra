@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listOrders, createOrder, deleteUnpaidOrder } from "@/lib/server/orders";
+import { listOrders, createOrder, deleteUnpaidOrder, releaseStaleUnpaidOrders } from "@/lib/server/orders";
+import { OutOfStock } from "@/lib/server/stock";
 import { cashfreeMode, createCashfreeOrder, paymentProvider } from "@/lib/server/cashfree";
 import { sendOrderConfirmation } from "@/lib/server/email";
 import type { Order, OrderStatus } from "@/lib/order";
@@ -142,8 +143,32 @@ export async function POST(req: NextRequest) {
   if (checked.couponCode) order.couponCode = checked.couponCode;
   else delete order.couponCode;
 
+  // Unpaid Sutra Pay orders abandoned over an hour ago give their stock back
+  // first, so a piece someone walked away from can be bought again.
+  if (paymentProvider() === "sutrapay") {
+    await releaseStaleUnpaidOrders().catch((error) => console.error("[orders] releasing stale orders failed", error));
+  }
+
   try {
-    const saved = await createOrder(order);
+    let saved: Order;
+    try {
+      saved = await createOrder(order);
+    } catch (error) {
+      if (error instanceof OutOfStock) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              error.left > 0
+                ? `Only ${error.left} of ${error.productName} left. Lower the quantity in your bag and try again.`
+                : `${error.productName} has just sold out. Please remove it from your bag.`,
+            soldOut: true,
+          },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
     if (saved.paymentMethod === "card" && paymentProvider() === "sutrapay") {
       // Sutra Pay: the browser shows its window, which pays through api/payments/sutrapay.
