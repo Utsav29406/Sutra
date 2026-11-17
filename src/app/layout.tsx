@@ -1,5 +1,26 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost, Playfair_Display, Poppins } from "next/font/google";
+/*
+ * Fonts are installed from npm (Fontsource: the same Google Fonts files, split
+ * into the same character sets with unicode-range), so the build never has to
+ * download them - next/font/google did, and a failed download failed the
+ * whole deploy. The families and their size-matched fallbacks are set as CSS
+ * variables in globals.css.
+ *   Playfair Display (headings), Poppins (body, with Devanagari for the photo
+ *   credits), and the hero pairing: Cormorant Garamond + Jost.
+ */
+import "@fontsource-variable/playfair-display/wght.css";
+import "@fontsource/poppins/300.css";
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "@fontsource/cormorant-garamond/300.css";
+import "@fontsource/cormorant-garamond/400.css";
+import "@fontsource/cormorant-garamond/300-italic.css";
+import "@fontsource/cormorant-garamond/400-italic.css";
+import "@fontsource/jost/300.css";
+import "@fontsource/jost/400.css";
+import "@fontsource/jost/500.css";
 import "./globals.css";
 // Phone-only styles, after the shared ones so they win at equal specificity.
 import "@/sutra-mobile/sutra-mobile.css";
@@ -22,39 +43,6 @@ import { GoogleOneTap } from "@/components/GoogleSignIn";
 import { Notifications } from "@/components/Notifications";
 import FestivalTeaser from "@/components/FestivalTeaser";
 import { SITE_ALT_NAMES, SITE_NAME, SITE_URL, jsonLd } from "@/lib/site";
-
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
-/* Hero-only pairing. Cormorant carries the couture contrast the headline wants;
-   Jost sets the two eyebrows in a single voice. The rest of the site stays on
-   Playfair + Poppins. */
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-
-const jost = Jost({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-jost",
-  display: "swap",
-  // Small labels only: fetched when used, not ahead of the page's main fonts.
-  preload: false,
-});
 
 const DESCRIPTION =
   "Handpicked sarees, lehengas, kurtas and sherwanis — crafted by master weavers across India, delivered to your doorstep.";
@@ -101,7 +89,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${playfairDisplay.variable} ${poppins.variable} ${cormorant.variable} ${jost.variable} font-sans flex min-h-screen flex-col bg-cream text-foreground antialiased`}
+        className={`font-sans flex min-h-screen flex-col bg-cream text-foreground antialiased`}
       >
         {/* Decides before the first paint whether the opening intro plays. */}
         <script dangerouslySetInnerHTML={{ __html: INTRO_GATE }} />
