@@ -31,7 +31,7 @@ import MotionProvider from "@/components/MotionProvider";
 import { INTRO_GATE } from "@/lib/intro";
 import { THEME_GATE } from "@/lib/festival-theme";
 import { DiwaliDefs } from "@/components/DiwaliDecor";
-import { FESTIVAL_CSS, FESTIVAL_GATE } from "@/sutra-mobile/festival/gate";
+import { FESTIVAL_GATE } from "@/lib/festival-gate";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
 import ChatWidget from "@/components/ChatWidget";
@@ -99,9 +99,8 @@ export default function RootLayout({
       >
         {/* Decides before the first paint whether the opening intro plays. */}
         <script dangerouslySetInnerHTML={{ __html: INTRO_GATE }} />
-        {/* Marks the festival running now, so phones get its look from the first paint. */}
+        {/* Marks the festival running now, so the hero shows the right line from the first paint. */}
         <script dangerouslySetInnerHTML={{ __html: FESTIVAL_GATE }} />
-        <style dangerouslySetInnerHTML={{ __html: FESTIVAL_CSS }} />
         {/* Turns the festival theme on while its dates run (lib/festival-theme). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_GATE }} />
         <DiwaliDefs />

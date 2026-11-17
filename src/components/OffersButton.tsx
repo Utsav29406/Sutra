@@ -129,7 +129,7 @@ export default function OffersButton({ className = "", floating = false }: { cla
 
             {festival ? (
               <Link
-                href="/festival"
+                href="/shop"
                 onClick={() => setOpen(false)}
                 className="flex flex-col gap-1 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 p-3.5 ring-1 ring-primary/40 transition hover:ring-primary/70"
               >

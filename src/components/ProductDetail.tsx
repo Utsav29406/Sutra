@@ -14,7 +14,6 @@ import {
   Ruler,
   ShoppingBag,
   Star,
-  Tag,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCartStore } from "@/lib/store/cart";
@@ -23,10 +22,9 @@ import { useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/lib/useHydrated";
 import { useRequireAccount } from "@/lib/useRequireAccount";
 import { discountPercent, formatPrice } from "@/lib/utils";
-import { getProductBySlug, type Product } from "@/lib/products";
-import { DRAWN_FESTIVALS, festivalEnd, festivalPrice } from "@/lib/festival";
+import type { Product } from "@/lib/products";
+import { festivalEnd, festivalPrice } from "@/lib/festival";
 import { useFestival } from "@/lib/useFestival";
-import { MiniCard, PhoneFestivalPrice, PhoneFestivalTag } from "@/sutra-mobile/festival/FestivalParts";
 import { CircleLine } from "@/components/CircleParts";
 import { MandalaMotif } from "@/components/MandalaMotif";
 import { SizeGuideModal } from "@/components/SizeGuideModal";
@@ -157,7 +155,6 @@ export default function ProductDetail({ product, related }: { product: Product; 
                 {discount}% OFF
               </span>
             )}
-            <PhoneFestivalTag className="bottom-4 px-3 text-[11px]" />
             {/* Phones: the wishlist heart sits on the photo, as on Flipkart. */}
             <button
               type="button"
@@ -208,7 +205,7 @@ export default function ProductDetail({ product, related }: { product: Product; 
               </span>
             </div>
 
-            <div data-fest-hide className="mt-5 flex items-baseline gap-3 max-md:mt-3 max-md:flex-wrap max-md:gap-x-2.5 max-md:gap-y-0">
+            <div className="mt-5 flex items-baseline gap-3 max-md:mt-3 max-md:flex-wrap max-md:gap-x-2.5 max-md:gap-y-0">
               {discount !== null && (
                 <span className="text-lg font-semibold text-emerald-400 md:hidden">
                   <span aria-hidden="true">↓</span>
@@ -223,22 +220,8 @@ export default function ProductDetail({ product, related }: { product: Product; 
                 <span className="text-lg text-foreground/40 line-through max-md:hidden">{formatPrice(product.compareAtPrice)}</span>
               )}
             </div>
-            <PhoneFestivalPrice product={product} large />
             <p className="mt-1 text-xs text-foreground/50">Inclusive of all taxes</p>
             <CircleLine price={product.price} />
-            {/* Phones during a festival: the offer, already applied, in tonight's colour. */}
-            {DRAWN_FESTIVALS.map((f) => (
-              <span key={f.id} data-fest-show={f.id}>
-                <span className="mt-3 flex gap-2.5 rounded-[10px] border border-[color-mix(in_srgb,var(--night)_45%,transparent)] bg-[color-mix(in_srgb,var(--night)_18%,rgb(var(--color-cream)))] px-3 py-2.5 text-xs leading-relaxed text-foreground/70 md:hidden">
-                  <Tag size={16} className="mt-0.5 shrink-0 text-accent-light" aria-hidden="true" />
-                  <span>
-                    <b className="font-medium text-foreground">{f.name} offer applied.</b>{" "}
-                    {formatPrice(product.price - festivalPrice(product.price, f))} off our price of {formatPrice(product.price)}
-                    {f.freeShipping ? ", plus free delivery" : ""}. No code needed.
-                  </span>
-                </span>
-              </span>
-            ))}
             {festival && (
               <p className="mt-4 rounded-xl border border-accent/30 bg-accent/[0.07] px-4 py-3 text-sm leading-relaxed text-foreground/80 max-md:hidden">
                 <strong className="font-medium text-accent-light">
@@ -400,27 +383,6 @@ export default function ProductDetail({ product, related }: { product: Product; 
           </div>
         )}
       </div>
-
-      {/* Phones during a festival: more from its edit, to finish the outfit. */}
-      {DRAWN_FESTIVALS.map((f) => {
-        const more = f.edit.slugs
-          .filter((slug) => slug !== product.slug)
-          .map(getProductBySlug)
-          .filter((p): p is Product => !!p)
-          .slice(0, 6);
-        return (
-          <div key={f.id} data-fest-show={f.id}>
-            <section className="px-4 pt-8 md:hidden">
-              <h2 className="mb-3 font-hero text-[23px] font-medium leading-tight">{f.phone.completeTitle}</h2>
-              <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-                {more.map((p) => (
-                  <MiniCard key={p.id} product={p} festival={f} />
-                ))}
-              </div>
-            </section>
-          </div>
-        );
-      })}
 
       <ProductReviews product={product} />
       <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} sizes={product.sizes} />

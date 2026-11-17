@@ -7,7 +7,6 @@ import PromiseRail from "@/components/PromiseRail";
 import OffersStrip from "@/components/OffersStrip";
 import FestivalBanner from "@/components/FestivalBanner";
 import FestivalEdit from "@/components/FestivalEdit";
-import PhoneFestivalHome from "@/sutra-mobile/festival/PhoneFestivalHome";
 import { CircleHomeCard } from "@/components/CircleParts";
 import { Embers, LampLine } from "@/components/DiwaliDecor";
 import ProductCard from "@/components/ProductCard";
@@ -24,16 +23,12 @@ export default function HomeClient() {
   return (
     <div>
       <Embers />
-      {/* Phones during a festival show its own Home instead of these. */}
-      <div data-fest-hide className="contents">
-        <Hero />
-        <FestivalBanner />
-        <PromiseRail />
-        <OffersStrip />
-        <CircleHomeCard className="px-4 pt-6" />
-        <FestivalEdit />
-      </div>
-      <PhoneFestivalHome />
+      <Hero />
+      <FestivalBanner />
+      <PromiseRail />
+      <OffersStrip />
+      <CircleHomeCard className="px-4 pt-6" />
+      <FestivalEdit />
 
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-10 flex items-end justify-between">

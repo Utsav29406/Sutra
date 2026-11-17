@@ -50,13 +50,6 @@ const nextConfig: NextConfig = {
    */
   serverExternalPackages: ["pdfkit"],
 
-  /*
-   * When this build was made. lib/festival leaves out festivals whose offer had
-   * already ended by then, and the server and the browser must agree on that
-   * list, so the moment is fixed here and inlined into both.
-   */
-  env: { SUTRA_BUILT_AT: String(Date.now()) },
-
   // Sutra Circle was renamed Sutra Gold (2026-11-05); old links keep working.
   async redirects() {
     return [{ source: "/circle", destination: "/gold", permanent: true }];

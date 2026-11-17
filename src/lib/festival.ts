@@ -45,8 +45,6 @@ export interface Festival {
    * pieces in that colour, by slug, picked by eye from their photos.
    */
   days?: { colour: string; hex: string; goddess: string; slugs: string[] }[];
-  /** The festival's own look on phones (sutra-mobile/festival at the project root). */
-  phone: FestivalPhone;
   /**
    * The big "coming soon" popup (FestivalTeaser), shown once per visitor from
    * this India-time day until the offer opens.
@@ -59,31 +57,6 @@ export interface Festival {
    * Diwali has a theme.
    */
   themeFrom?: string;
-}
-
-/**
- * Phones get their own layout while a festival runs: a tonight card, a store
- * tab in the middle of the bottom bar, the festival price first on every card.
- * Tablets and desktop keep the usual site.
- */
-export interface FestivalPhone {
-  /** The middle tab's label and the store page's title. */
-  tabLabel: string;
-  storeTitle: string;
-  storeIntro: string;
-  /** Icon on the middle tab (see FestivalIcon). */
-  icon: "dandiya" | "diya";
-  /** Theme colour when the festival has no colour per day. */
-  accent: string;
-  /** Category circles on Home: label, the piece whose photo shows it, and the search it opens. */
-  categories: { label: string; slug: string; q: string }[];
-  /** Extra filter chips on the store page, beyond All / For her / For him / price. */
-  chips: { label: string; match: RegExp }[];
-  /** Heading of the row of festival pieces on a product page. */
-  completeTitle: string;
-  /** Home's two big tiles, each opening the store filtered to her or him. */
-  forHer: { sub: string; slug: string };
-  forHim: { sub: string; slug: string };
 }
 
 export const FESTIVALS: Festival[] = [
@@ -131,26 +104,6 @@ export const FESTIVALS: Festival[] = [
       { colour: "Purple", hex: "#8e4fc7", goddess: "Maa Mahagauri", slugs: [] },
       { colour: "Peacock green", hex: "#0f9b8e", goddess: "Maa Siddhidatri", slugs: ["maheshwari-silk-cotton-saree", "paithani-silk-saree"] },
     ],
-    phone: {
-      tabLabel: "Garba",
-      storeTitle: "Garba Store",
-      storeIntro: "Picked for the nine nights, from Kutch, Patan, Rajkot and Kathiawad.",
-      icon: "dandiya",
-      accent: "#d4af37",
-      categories: [
-        { label: "Chaniya Choli", slug: "chaniya-choli-garba-set", q: "chaniya choli" },
-        { label: "Kediyu", slug: "mirror-work-kediyu-chorno-set", q: "kediyu" },
-        { label: "Bandhani", slug: "bandhani-odhani-dupatta", q: "bandhani" },
-        { label: "Patola", slug: "rajkot-patola-silk-saree", q: "patola" },
-        { label: "Ghaghra", slug: "banjara-mirror-work-kanchali-ghaghra", q: "ghaghra" },
-        { label: "Safa", slug: "bandhani-jodhpuri-safa", q: "safa" },
-        { label: "Kutchi", slug: "ahir-hand-embroidered-kutchi-blouse", q: "kutch" },
-      ],
-      chips: [{ label: "Dupattas & safa", match: /dupatta|odhani|safa/i }],
-      completeTitle: "Complete the garba look",
-      forHer: { sub: "Chaniya choli, odhani, ghaghra", slug: "chaniya-choli-garba-set" },
-      forHim: { sub: "Kediyu, chorno, safa", slug: "mirror-work-kediyu-chorno-set" },
-    },
   },
   {
     id: "DIWALI",
@@ -190,25 +143,6 @@ export const FESTIVALS: Festival[] = [
         "kurta-churidar-with-nehru-jacket",
         "zari-embroidered-punjabi-jutti",
       ],
-    },
-    phone: {
-      tabLabel: "Diwali",
-      storeTitle: "Diwali Store",
-      storeIntro: "Silk, zari and brocade for the five days of Diwali, and gifts for Bhai Dooj.",
-      icon: "diya",
-      accent: "#f29a1f",
-      categories: [
-        { label: "Silk sarees", slug: "banarasi-silk-saree", q: "silk saree" },
-        { label: "Lehengas", slug: "zardozi-velvet-bridal-lehenga", q: "lehenga" },
-        { label: "Sherwanis", slug: "rajputi-brocade-sherwani", q: "sherwani" },
-        { label: "Nehru jackets", slug: "eri-muga-silk-nehru-jacket", q: "nehru jacket" },
-        { label: "Dupattas", slug: "phulkari-hand-embroidered-dupatta", q: "dupatta" },
-        { label: "Juttis", slug: "zari-embroidered-punjabi-jutti", q: "jutti" },
-      ],
-      chips: [{ label: "Gifts", match: /dupatta|safa|jutti|mojari|shawl|jacket/i }],
-      completeTitle: "Complete the Diwali look",
-      forHer: { sub: "Silk sarees and bridal lehengas", slug: "paithani-silk-saree" },
-      forHim: { sub: "Sherwanis and Nehru jackets", slug: "rajputi-brocade-sherwani" },
     },
     teaser: {
       from: "2026-10-21",
@@ -309,13 +243,3 @@ export function offerLabel(code: string): string {
   return tier ? `Sutra Gold · ${tier.name}` : `Coupon ${code}`;
 }
 
-/**
- * The festivals pages draw. Pages are prerendered at each deploy, so a
- * festival whose offer had already ended by then can never show, and leaving
- * it out keeps its hidden markup out of every page (Navratri's was a third of
- * Home's HTML). The cut-off is the build's own time (next.config env), so the
- * server and the browser draw the same list. FESTIVALS keeps every entry: old
- * orders still name their festival.
- */
-const BUILT_AT = Number(process.env.SUTRA_BUILT_AT) || 0;
-export const DRAWN_FESTIVALS = FESTIVALS.filter((f) => festivalEnd(f) > BUILT_AT);

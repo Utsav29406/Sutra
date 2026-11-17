@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import { Home, LayoutGrid, Search, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart";
 import { useHydrated } from "@/lib/useHydrated";
-import { DRAWN_FESTIVALS } from "@/lib/festival";
-import { FestivalIcon } from "@/sutra-mobile/festival/FestivalParts";
 
 /**
  * Phones only: the app-style tab bar along the bottom of the screen, as on
@@ -48,23 +46,6 @@ export default function MobileTabBar() {
         <ul className="sutra-tabs grid h-[3.6rem] grid-cols-4">
           {tabs.map((tab) => (
             <Tab key={tab.href} {...tab} />
-          ))}
-          {/* During a festival: its store, raised in the middle (a fifth column, see sutra-mobile.css). */}
-          {DRAWN_FESTIVALS.map((f) => (
-            <li key={f.id} data-fest-show={f.id}>
-              <Link
-                href="/festival"
-                aria-current={pathname.startsWith("/festival") ? "page" : undefined}
-                className={`relative flex h-full flex-col items-center justify-end pb-1.5 text-[10.5px] font-medium ${
-                  pathname.startsWith("/festival") ? "text-accent-light" : "text-foreground"
-                }`}
-              >
-                <span className="absolute -top-[18px] left-1/2 grid h-[52px] w-[52px] -translate-x-1/2 place-items-center rounded-full border-[3px] border-cream bg-[var(--night)] text-[var(--on-night)] shadow-[0_0_0_1px_rgb(var(--color-accent-light)),0_8px_18px_-6px_rgba(0,0,0,0.8)]">
-                  <FestivalIcon icon={f.phone.icon} size={24} />
-                </span>
-                {f.phone.tabLabel}
-              </Link>
-            </li>
           ))}
           <li>
             <button

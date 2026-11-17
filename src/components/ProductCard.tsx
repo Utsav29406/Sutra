@@ -14,7 +14,6 @@ import type { Product } from "@/lib/products";
 import { festivalPrice } from "@/lib/festival";
 import { CARD_SIZES } from "@/lib/images";
 import { useFestival } from "@/lib/useFestival";
-import { PhoneFestivalPrice, PhoneFestivalTag } from "@/sutra-mobile/festival/FestivalParts";
 import Photo from "@/components/Photo";
 import { toastAddedToBag } from "@/components/Notifications";
 
@@ -76,7 +75,6 @@ export default function ProductCard({
           >
             <Heart size={15} className={wishlisted ? "fill-primary" : ""} />
           </button>
-          <PhoneFestivalTag />
           {hydrated && stock === 0 && (
             <span className="absolute inset-0 flex items-center justify-center bg-cream-dark/70 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
               Sold Out
@@ -129,14 +127,13 @@ export default function ProductCard({
               <span className="sr-only"> out of 5</span>
             </span>
           )}
-          <div data-fest-hide className="mt-1 flex items-center gap-2 max-md:flex-wrap max-md:gap-x-1.5 max-md:gap-y-0">
+          <div className="mt-1 flex items-center gap-2 max-md:flex-wrap max-md:gap-x-1.5 max-md:gap-y-0">
             <span className="font-semibold text-primary max-md:text-[15px] max-md:text-foreground">{formatPrice(product.price)}</span>
             {product.compareAtPrice && (
               <span className="text-sm text-foreground/40 line-through max-md:text-xs">{formatPrice(product.compareAtPrice)}</span>
             )}
             {discount !== null && <span className="text-xs font-semibold text-emerald-400 md:hidden">{discount}% off</span>}
           </div>
-          <PhoneFestivalPrice product={product} />
           {festival && (
             <p className="mt-0.5 text-[12.5px] text-accent-light max-md:hidden">
               {formatPrice(festivalPrice(product.price, festival))} in the {festival.name} offer

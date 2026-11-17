@@ -23,7 +23,7 @@ import { SITE_URL } from "@/lib/site";
 
 const SHOW_AFTER_MS = 2000;
 // Checkout, sign-in and admin stay clear; the festival store is where the popup leads.
-const QUIET_PATHS = ["/checkout", "/login", "/signup", "/forgot-password", "/admin", "/order", "/festival"];
+const QUIET_PATHS = ["/checkout", "/login", "/signup", "/forgot-password", "/admin", "/order"];
 const dismissedKey = (festival: Festival) => `sutra-teaser-${festival.id}`;
 
 export default function FestivalTeaser() {

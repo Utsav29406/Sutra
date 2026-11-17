@@ -14,7 +14,6 @@ import SearchBar from "@/components/SearchBar";
 import OffersButton from "@/components/OffersButton";
 import { CollectionsPanel, useCollectionsMenu } from "@/components/CollectionsMenu";
 import { MOBILE_BAR_HIDDEN, PHONE_SEARCH_EVENT } from "@/sutra-mobile/MobileTabBar";
-import { DRAWN_FESTIVALS } from "@/lib/festival";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -318,30 +317,6 @@ export default function Header() {
               </AnimatePresence>
             </Link>
           </motion.div>
-
-          {/* Phones during a festival: which night it is, opening the festival store. */}
-          {DRAWN_FESTIVALS.map((f) => (
-            <span key={f.id} data-fest-show={f.id}>
-              <Link
-                href="/festival"
-                className="inline-flex h-[26px] items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--night)] pl-1.5 pr-2.5 text-[11px] font-medium text-[var(--on-night)] md:hidden"
-              >
-                <i className="h-3.5 w-3.5 rounded-full bg-current opacity-25" aria-hidden="true" />
-                {f.days
-                  ? [
-                      ...f.days.map((d, i) => (
-                        <span key={i} data-night-show={i + 1}>
-                          Night {i + 1} · {d.colour}
-                        </span>
-                      )),
-                      <span key="last" data-night-show={f.days.length + 1}>
-                        {f.endsOn}
-                      </span>,
-                    ]
-                  : f.name}
-              </Link>
-            </span>
-          ))}
 
           {/* Phones: straight to the account page (or sign in), no menu. Hidden
               until the saved session is read, so it never shows the wrong one. */}
