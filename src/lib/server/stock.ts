@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { query } from "@/lib/db";
+import { query, transaction } from "@/lib/db";
 import { products } from "@/lib/products";
 
 /**
@@ -73,6 +73,29 @@ export async function returnStock(client: PoolClient, orderId: string): Promise<
       WHERE s.product_id = q.product_id`,
     [orderId]
   );
+}
+
+/**
+ * The admin's restock (+) or write-off (-). Relative to what is there now, in
+ * one statement, so an order placed at the same moment is never overwritten
+ * the way "set stock to 12" would. Refuses to go below zero.
+ */
+export async function adjustStock(
+  productId: string,
+  change: number
+): Promise<{ ok: true; stock: number } | { ok: false; error: string; stock?: number }> {
+  return transaction(async (client) => {
+    await ensureRows(client, [productId]);
+    const updated = await client.query<{ stock: number }>(
+      `UPDATE product_stock SET stock = stock + $2, updated_at = now()
+        WHERE product_id = $1 AND stock + $2 >= 0 RETURNING stock`,
+      [productId, change]
+    );
+    if (updated.rowCount) return { ok: true as const, stock: Number(updated.rows[0].stock) };
+    const left = await client.query<{ stock: number }>("SELECT stock FROM product_stock WHERE product_id = $1", [productId]);
+    const stock = Number(left.rows[0]?.stock ?? 0);
+    return { ok: false as const, error: `Only ${stock} in stock, so ${-change} can't be removed.`, stock };
+  });
 }
 
 /** What's left of every piece: the table's figure, or the catalogue's for a piece not yet tracked. */

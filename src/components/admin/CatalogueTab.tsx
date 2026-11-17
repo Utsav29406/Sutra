@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowUpDown, Search, TriangleAlert } from "lucide-react";
+import { ArrowUpDown, Minus, Plus, Search, TriangleAlert } from "lucide-react";
+import toast from "react-hot-toast";
 import { products } from "@/lib/products";
 import { formatPrice } from "@/lib/utils";
+import { useStockStore } from "@/lib/store/stock";
 
 type SortKey = "name" | "category" | "price" | "stock" | "rating";
 
@@ -12,6 +14,27 @@ export function CatalogueTab({ live }: { live: Record<string, number> | null }) 
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [ascending, setAscending] = useState(true);
+  // How many units each row's Add / Remove will move, and which row is saving.
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const adjust = useStockStore((s) => s.adjust);
+
+  async function changeStock(productId: string, name: string, sign: 1 | -1) {
+    const amount = Number(amounts[productId] || 1);
+    if (!Number.isInteger(amount) || amount < 1 || amount > 1000) {
+      toast.error("Enter a whole number from 1 to 1000.");
+      return;
+    }
+    setSaving(productId);
+    const result = await adjust(productId, sign * amount);
+    setSaving(null);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setAmounts((a) => ({ ...a, [productId]: "" }));
+    toast.success(`${name}: ${sign > 0 ? "added" : "removed"} ${amount}. ${result.stock} in stock now.`);
+  }
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -82,7 +105,7 @@ export function CatalogueTab({ live }: { live: Record<string, number> | null }) 
       </div>
 
       <div className="mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-cream-dark/70">
-        <table className="w-full min-w-[42rem] text-left text-sm">
+        <table className="w-full min-w-[54rem] text-left text-sm">
           <thead className="border-b border-white/10 text-xs uppercase tracking-[0.1em] text-foreground/50">
             <tr>
               {columns.map((col) => (
@@ -97,6 +120,7 @@ export function CatalogueTab({ live }: { live: Record<string, number> | null }) 
                   </button>
                 </th>
               ))}
+              <th className="px-5 py-3 font-semibold">Restock</th>
             </tr>
           </thead>
           <tbody>
@@ -119,6 +143,42 @@ export function CatalogueTab({ live }: { live: Record<string, number> | null }) 
                   )}
                 </td>
                 <td className="px-5 py-3 text-foreground/60">{product.rating.toFixed(1)}</td>
+                <td className="px-5 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={1000}
+                      placeholder="1"
+                      value={amounts[product.id] ?? ""}
+                      onChange={(e) => setAmounts((a) => ({ ...a, [product.id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void changeStock(product.id, product.name, 1);
+                      }}
+                      aria-label={`Units to add or remove for ${product.name}`}
+                      className="w-16 rounded-lg border border-white/12 bg-transparent px-2 py-1.5 text-sm outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={() => changeStock(product.id, product.name, 1)}
+                      disabled={saving === product.id}
+                      aria-label={`Add stock for ${product.name}`}
+                      className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white transition hover:bg-primary-dark disabled:opacity-60"
+                    >
+                      <Plus size={12} aria-hidden="true" />
+                      Add
+                    </button>
+                    <button
+                      onClick={() => changeStock(product.id, product.name, -1)}
+                      disabled={saving === product.id || stock === 0}
+                      aria-label={`Remove stock for ${product.name}`}
+                      className="flex items-center gap-1 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-foreground/70 transition hover:border-primary hover:text-primary disabled:opacity-40"
+                    >
+                      <Minus size={12} aria-hidden="true" />
+                      Remove
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -126,7 +186,8 @@ export function CatalogueTab({ live }: { live: Record<string, number> | null }) 
         {rows.length === 0 && <p className="px-5 py-8 text-sm text-foreground/55">Nothing in the catalogue matches that.</p>}
       </div>
       <p className="mt-3 text-xs text-foreground/45">
-        Pieces are defined in the codebase, not a database, so they can be read here but not edited.
+        Stock is live: Add restocks a piece, Remove takes units out (damaged, sold elsewhere). Names, prices and photos
+        are defined in the codebase, so they can be read here but not edited.
       </p>
     </div>
   );
