@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 /*
  * Fonts are installed from npm (Fontsource: the same Google Fonts files, split
  * into the same character sets with unicode-range), so the build never has to
@@ -42,6 +42,7 @@ import DataBootstrap from "@/components/DataBootstrap";
 import { GoogleOneTap } from "@/components/GoogleSignIn";
 import { Notifications } from "@/components/Notifications";
 import FestivalTeaser from "@/components/FestivalTeaser";
+import InstallApp from "@/components/InstallApp";
 import { SITE_ALT_NAMES, SITE_NAME, SITE_URL, jsonLd } from "@/lib/site";
 
 const DESCRIPTION =
@@ -53,6 +54,8 @@ export const metadata: Metadata = {
   title: "Sutra — Indian Traditional Wear",
   description: DESCRIPTION,
   applicationName: "Sutra",
+  // Added to an iPhone's home screen, Sutra opens full screen under this name.
+  appleWebApp: { capable: true, title: "Sutra", statusBarStyle: "black" },
   openGraph: {
     type: "website",
     siteName: "Sutra",
@@ -66,6 +69,9 @@ export const metadata: Metadata = {
     ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() }
     : undefined,
 };
+
+// The browser bar's colour on phones, and the installed app's.
+export const viewport: Viewport = { themeColor: "#1a1416" };
 
 /*
  * Tells Google what Sutra is, on every page. The site's name for search
@@ -123,6 +129,7 @@ export default function RootLayout({
           <Press />
           <Notifications />
           <FestivalTeaser />
+          <InstallApp />
         </MotionProvider>
       </body>
     </html>

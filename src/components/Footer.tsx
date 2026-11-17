@@ -4,6 +4,7 @@ import Link from "next/link";
 import { m as motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
 import { FooterLamps } from "@/components/DiwaliDecor";
+import { InstallAppButton } from "@/components/InstallApp";
 
 export default function Footer() {
   return (
@@ -76,6 +77,9 @@ export default function Footer() {
               <Link className="sutra-underline hover:text-primary" href="/terms">
                 Terms of Service
               </Link>
+            </li>
+            <li className="md:hidden">
+              <InstallAppButton className="text-accent-light" />
             </li>
           </ul>
         </div>
