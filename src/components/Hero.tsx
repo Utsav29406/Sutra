@@ -29,85 +29,11 @@ const HEADLINE = [
 /** The word Diwali swaps in for "Today.". */
 const DIWALI_WORD = "Diwali.";
 
-const FLAG_COLORS = [
-  "rgb(var(--color-accent-light))",
-  "#ffffff",
-  "rgb(var(--color-accent))",
-];
-
-const FLAGS = 22;
-/* The string sags in a shallow scallop between knots. Drawn in a 100-unit-wide
-   box per flag and stretched to the hero's width; the stroke stays hairline. */
-const STRING = Array.from({ length: FLAGS + 1 }, (_, i) => {
-  const x = i * 100;
-  return i === 0 ? "M-50 2" : `Q${x - 100} 14 ${x - 50} 2`;
-}).join(" ") + ` Q${FLAGS * 100} 14 ${FLAGS * 100 + 50} 2`;
-
-/** Toran-style bunting: flags hung from a scalloped gold string. */
-function Bunting() {
-  return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 max-md:hidden">
-      <svg
-        className="absolute inset-x-0 top-0 h-4 w-full overflow-visible"
-        viewBox={`0 0 ${FLAGS * 100} 16`}
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <defs>
-          <linearGradient id="sutra-string" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" stopColor="rgb(var(--color-accent-light))" stopOpacity="0" />
-            <stop offset="0.12" stopColor="rgb(var(--color-accent-light))" stopOpacity="0.7" />
-            <stop offset="0.5" stopColor="#f3dc8a" stopOpacity="0.9" />
-            <stop offset="0.88" stopColor="rgb(var(--color-accent-light))" stopOpacity="0.7" />
-            <stop offset="1" stopColor="rgb(var(--color-accent-light))" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={STRING} fill="none" stroke="url(#sutra-string)" strokeWidth="1.25" vectorEffect="non-scaling-stroke" />
-      </svg>
-      {Array.from({ length: FLAGS }, (_, i) => (
-        <motion.div
-          key={i}
-          className="absolute top-0 flex flex-col items-center"
-          style={{ left: `${((i + 0.5) / FLAGS) * 100}%`, x: "-50%", transformOrigin: "top center" }}
-          animate={{ rotate: [-3, 3, -3] }}
-          transition={{
-            duration: 4 + ((i % 5) * 0.3),
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.08,
-          }}
-        >
-          {/* The knot where the flag is tied on. */}
-          <span className="mt-[0.5px] h-[5px] w-[5px] rounded-full bg-accent-light shadow-[0_0_6px_rgb(var(--color-accent-light)/0.6)]" />
-          <svg viewBox="0 0 20 24" width="16" height="19" className="-mt-[1px]">
-            <path
-              d="M0 0 H20 L10 24 Z"
-              fill={FLAG_COLORS[i % FLAG_COLORS.length]}
-              opacity="0.9"
-            />
-            <circle
-              cx="10"
-              cy="7"
-              r="2"
-              fill="rgb(var(--color-primary))"
-              opacity="0.6"
-            />
-          </svg>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-
 export default function Hero() {
   return (
     <section className="relative flex min-h-[85vh] items-center overflow-hidden">
       {/* The sparkles, mandalas and glow live in SiteBackdrop, fixed behind
-          every page. Only the bunting is specific to the hero. */}
-      <div data-diwali-off className="contents">
-        <Bunting />
-      </div>
+          every page. */}
       {DIWALI && <HeroNight />}
 
       {/* w-full matters: as a flex item this div would otherwise shrink to its
