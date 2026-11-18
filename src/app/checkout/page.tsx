@@ -229,7 +229,9 @@ export default function CheckoutPage() {
           <h1 className="mt-2 font-display text-3xl sm:text-4xl">Checkout</h1>
         </motion.div>
 
-        <form onSubmit={handlePlaceOrder} className="mt-10 grid gap-10 lg:grid-cols-5">
+        {/* grid-cols-1 (minmax 0) rather than the implicit column, which grew to
+            its widest content and pushed the page past a phone's edge. */}
+        <form onSubmit={handlePlaceOrder} className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <h2 className="font-display text-xl">Delivery Details</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
