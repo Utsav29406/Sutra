@@ -4,6 +4,7 @@ import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 import toast, { resolveValue, useToaster, type Toast } from "react-hot-toast";
 import Photo from "@/components/Photo";
 import { useCartStore } from "@/lib/store/cart";
+import { usePhone } from "@/sutra-mobile/usePhone";
 
 /*
  * The site's notifications: react-hot-toast keeps the queue and the timers
@@ -15,34 +16,40 @@ import { useCartStore } from "@/lib/store/cart";
  * buy bar: full width on phones, top right on larger screens. A gold thread
  * along the bottom runs out with its time; hovering pauses them all, the ×
  * closes one, and on a phone a sideways swipe does too. Three at most, newest
- * on top.
+ * on top. Phones show one at a time, smaller and for less long, so tapping
+ * Add to Bag or a heart a few times never buries the page under cards.
  */
-
-const MAX_SHOWN = 3;
 
 const DURATIONS = {
   success: { duration: 3500 },
   blank: { duration: 4000 },
   error: { duration: 5000 },
 };
+const PHONE_DURATIONS = {
+  success: { duration: 2200 },
+  blank: { duration: 3000 },
+  error: { duration: 4000 },
+};
 
 export function Notifications() {
-  const { toasts, handlers } = useToaster(DURATIONS);
+  const phone = usePhone();
+  const maxShown = phone ? 1 : 3;
+  const { toasts, handlers } = useToaster(phone ? PHONE_DURATIONS : DURATIONS);
   const { startPause, endPause } = handlers;
 
-  // Newest first. Past the first three, older ones are closed; closed ones
+  // Newest first. Past the first few, older ones are closed; closed ones
   // stay a moment longer while they fade and fold away.
-  const shown = toasts.filter((t) => t.visible).slice(0, MAX_SHOWN);
+  const shown = toasts.filter((t) => t.visible).slice(0, maxShown);
   useEffect(() => {
-    toasts.filter((t) => t.visible).slice(MAX_SHOWN).forEach((t) => toast.dismiss(t.id));
-  }, [toasts]);
+    toasts.filter((t) => t.visible).slice(maxShown).forEach((t) => toast.dismiss(t.id));
+  }, [toasts, maxShown]);
   const list = toasts.filter((t) => !t.visible || shown.includes(t));
 
   return (
     <div
       onMouseEnter={startPause}
       onMouseLeave={endPause}
-      className="sutra-toasts pointer-events-none fixed right-6 top-[calc(var(--sutra-header-h,4rem)+0.75rem)] z-[10001] flex w-[360px] flex-col transition-[top] duration-300 print:hidden max-md:inset-x-2.5 max-md:top-[calc(var(--sutra-header-h,6.5rem)+0.5rem)] max-md:w-auto"
+      className="sutra-toasts pointer-events-none fixed right-6 top-[calc(var(--sutra-header-h,4rem)+0.75rem)] z-[10001] flex w-[360px] flex-col transition-[top] duration-300 print:hidden max-md:inset-x-4 max-md:top-[calc(var(--sutra-header-h,6.5rem)+0.375rem)] max-md:w-auto"
     >
       {list.map((t) => (
         <ToastCard key={t.id} t={t} />
@@ -99,19 +106,19 @@ function ToastCard({ t }: { t: Toast }) {
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerCancel={onUp}
-          className={`sutra-toast pointer-events-auto relative grid touch-pan-y select-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-[14px] border bg-cream-dark/[0.97] py-[11px] pl-3 pr-2.5 shadow-[0_18px_36px_-14px_rgba(0,0,0,0.75),0_0_0_1px_rgba(0,0,0,0.35)] backdrop-blur-md ${
+          className={`sutra-toast pointer-events-auto relative grid touch-pan-y select-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-[14px] border bg-cream-dark/[0.97] py-[11px] pl-3 pr-2.5 max-md:gap-2.5 max-md:rounded-[12px] max-md:py-1.5 max-md:pl-2.5 max-md:pr-1.5 shadow-[0_18px_36px_-14px_rgba(0,0,0,0.75),0_0_0_1px_rgba(0,0,0,0.35)] backdrop-blur-md ${
             error ? "border-primary/45" : "border-accent-light/30"
           }`}
         >
           <Lead t={t} />
-          <div className="min-w-0 text-[13.5px] font-medium leading-snug text-foreground">
+          <div className="min-w-0 text-[13.5px] font-medium leading-snug text-foreground max-md:text-[13px]">
             {typeof message === "string" ? <p>{message}</p> : message}
           </div>
           <button
             type="button"
             onClick={() => toast.dismiss(t.id)}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-full text-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-light"
+            className="grid h-8 w-8 place-items-center rounded-full text-foreground/50 max-md:h-7 max-md:w-7 transition-colors hover:bg-white/5 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-light"
           >
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" />
@@ -164,7 +171,7 @@ function Lead({ t }: { t: Toast }) {
   // A photo (or anything else that isn't a plain emoji) stands on its own.
   if (t.icon && typeof t.icon !== "string") return <>{t.icon}</>;
 
-  const chip = "grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full [&_svg]:h-[17px] [&_svg]:w-[17px]";
+  const chip = "grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full [&_svg]:h-[17px] [&_svg]:w-[17px] max-md:h-7 max-md:w-7 max-md:[&_svg]:h-[15px] max-md:[&_svg]:w-[15px]";
   if (t.type === "loading") {
     return (
       <span className={chip} aria-hidden="true">
@@ -212,7 +219,7 @@ export function toastAddedToBag(name: string, image: string) {
           toast.dismiss();
           useCartStore.getState().openCart();
         }}
-        className="shrink-0 whitespace-nowrap rounded-full border border-accent-light/40 px-3 py-1.5 text-xs font-medium text-accent-light transition-colors hover:bg-accent-light/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-light"
+        className="shrink-0 whitespace-nowrap rounded-full border border-accent-light/40 px-3 py-1.5 text-xs font-medium max-md:px-2.5 max-md:py-1 text-accent-light transition-colors hover:bg-accent-light/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-light"
       >
         View bag
       </button>
@@ -220,7 +227,7 @@ export function toastAddedToBag(name: string, image: string) {
     {
       id: `bag:${name}`,
       icon: (
-        <span className="block h-11 w-[34px] shrink-0 overflow-hidden rounded-md border border-accent-light/35 bg-cream">
+        <span className="block h-11 w-[34px] shrink-0 overflow-hidden rounded-md border border-accent-light/35 bg-cream max-md:h-9 max-md:w-7">
           <Photo src={image} sizes="34px" alt="" className="h-full w-full object-cover" />
         </span>
       ),
