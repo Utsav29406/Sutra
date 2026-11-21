@@ -71,7 +71,8 @@
    phone, the animated blurred glow and the frosted-glass bars (backdrop
    blur re-done on every scrolled frame) were most of the dropped frames.
    On phones the glow holds still without the blur filter (its gradients are
-   soft already) and bars are near-solid instead of frosted. */
+   soft already) and other blurs are off. The navbar and tab bar are solid
+   "liquid glass" (.sutra-glass in globals.css), never frosted. */
 @media (max-width: 767.98px) {
   .sutra-glow {
     filter: none;
@@ -80,10 +81,6 @@
   .sutra-bloom {
     animation: none;
     will-change: auto;
-  }
-  /* The floating navbar is near-solid here instead of frosted. */
-  .sutra-floatnav {
-    background-color: rgb(var(--color-cream) / 0.97);
   }
   .backdrop-blur-sm,
   .backdrop-blur-xl,

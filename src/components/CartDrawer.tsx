@@ -10,6 +10,7 @@ import { freeDeliveryFrom, quote } from "@/lib/pricing";
 import { useMember } from "@/lib/useMember";
 import Photo from "@/components/Photo";
 import { FreeDeliveryNudge } from "@/components/FreeDeliveryNudge";
+import { usePhone } from "@/sutra-mobile/usePhone";
 
 export default function CartDrawer() {
   const items = useCartStore((s) => s.items);
@@ -23,6 +24,10 @@ export default function CartDrawer() {
   const offerQuote = member?.percentOff ? quote(items, null, member) : null;
   const deliveryFrom = freeDeliveryFrom(member);
   const panel = useRef<HTMLElement>(null);
+  // Phones get a sheet from the bottom, only as tall as the bag needs, so the
+  // page stays in view above it; larger screens keep the side panel.
+  const phone = usePhone();
+  const hidden = phone ? { y: "100%" } : { x: "100%" };
 
   // A dialog for keyboards too: Escape closes it, focus moves in and stays in
   // while it's open, the page behind stops scrolling, and focus goes back to
@@ -80,13 +85,13 @@ export default function CartDrawer() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="bag-title"
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-cream shadow-2xl"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-cream shadow-2xl max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:h-auto max-md:max-h-[85dvh] max-md:max-w-none max-md:rounded-t-[22px] max-md:border-t max-md:border-white/12 max-md:pb-[env(safe-area-inset-bottom)]"
+            initial={hidden}
+            animate={{ x: 0, y: 0 }}
+            exit={hidden}
             transition={{ type: "spring", damping: 32, stiffness: 300 }}
           >
-            <div className="flex items-center justify-between border-b border-white/12 px-6 py-5">
+            <div className="flex items-center justify-between border-b border-white/12 px-6 py-5 max-md:py-3.5">
               <h2 id="bag-title" className="font-display text-xl text-primary">Your Bag</h2>
               <button
                 onClick={closeCart}
@@ -97,12 +102,12 @@ export default function CartDrawer() {
               </button>
             </div>
 
-            <div className="scrollbar-thin flex-1 overflow-y-auto px-6 py-4 max-md:overscroll-contain">
+            <div className="scrollbar-thin flex-1 overflow-y-auto px-6 py-4 max-md:min-h-0 max-md:flex-initial max-md:overscroll-contain">
               {items.length === 0 ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex h-full flex-col items-center justify-center gap-3 text-center text-foreground/60"
+                  className="flex h-full flex-col items-center justify-center gap-3 text-center text-foreground/60 max-md:h-auto max-md:py-8"
                 >
                   <ShoppingBag size={40} strokeWidth={1.2} />
                   <p>Your bag is empty.</p>
@@ -181,7 +186,7 @@ export default function CartDrawer() {
             </div>
 
             {items.length > 0 && (
-              <div className="border-t border-white/12 px-6 py-5">
+              <div className="border-t border-white/12 px-6 py-5 max-md:py-4">
                 <div className="mb-4 flex items-center justify-between text-lg">
                   <span>Subtotal</span>
                   <motion.span

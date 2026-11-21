@@ -445,7 +445,6 @@ export default function CheckoutPage() {
 
           {/* Phones: the total and Place Order stay at the bottom of the
               screen while the form scrolls, as on Flipkart. */}
-          <div aria-hidden="true" className="h-[calc(3rem+env(safe-area-inset-bottom))] md:hidden" />
           <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-cream/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-18px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden print:hidden">
             <div className="flex h-16 items-center justify-between gap-3 px-4">
               <button

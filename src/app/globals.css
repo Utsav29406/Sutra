@@ -124,20 +124,73 @@ body {
   }
 }
 
-/* Animated underline thread that slides beneath whichever nav link is active/hovered */
+/* iOS-style glass capsule that glides behind whichever nav link is open or
+   pointed at (Header positions it), matching the phone tab bar's capsule. */
 .sutra-navthread {
   position: absolute;
-  bottom: -4px;
+  top: 50%;
   left: 0;
-  height: 2px;
+  z-index: 0;
+  height: 34px;
   width: 0;
+  margin-top: -17px;
   border-radius: 999px;
-  background: rgb(var(--color-accent));
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.1));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 4px 12px -4px rgb(0 0 0 / 0.5);
   opacity: 0;
-  transition: transform 0.35s ease, width 0.35s ease, opacity 0.2s ease;
+  pointer-events: none;
+  transition:
+    transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    width 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.25s ease;
 }
 .sutra-navthread.on {
-  opacity: 0.7;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-navthread {
+    transition: none;
+  }
+}
+
+/* Solid iOS-style "liquid glass" for the navbar and the phone tab bar: a
+   layered dark gradient with a bright top edge. No live blur (it flickered
+   on phones), and the page never shows through. */
+.sutra-glass {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: linear-gradient(180deg, rgb(52 42 44), rgb(30 23 25) 55%, rgb(24 18 20));
+  border-color: rgb(255 255 255 / 0.16);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    inset 0 -1px 0 rgb(0 0 0 / 0.4),
+    0 14px 32px -12px rgb(0 0 0 / 0.75) !important;
+}
+
+/* The phone tab bar's open-page capsule (MobileTabBar): one element, a
+   quarter of the bar wide, that glides to the tapped button. */
+.sutra-tabpill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 25%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.1));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 4px 12px -4px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+  transition:
+    transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sutra-tabpill {
+    transition: none;
+  }
 }
 
 /* Navbar buttons. "Sign in" is a pill edged in the same gold as the thread

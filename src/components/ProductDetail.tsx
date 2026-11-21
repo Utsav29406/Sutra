@@ -340,7 +340,6 @@ export default function ProductDetail({ product, related }: { product: Product; 
       </div>
 
       {/* Phones: Flipkart's two buttons, always in reach at the bottom. */}
-      <div aria-hidden="true" className="h-[calc(4rem+env(safe-area-inset-bottom))] md:hidden" />
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-cream/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_-18px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden print:hidden">
         {soldOut ? (
           <p className="flex h-16 items-center justify-center text-sm font-semibold uppercase tracking-[0.2em] text-primary">Sold out</p>

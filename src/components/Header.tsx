@@ -69,8 +69,9 @@ export default function Header() {
       return;
     }
     const left = container ? link.getBoundingClientRect().left - container.getBoundingClientRect().left : link.offsetLeft;
-    thread.style.width = `${link.offsetWidth}px`;
-    thread.style.transform = `translateX(${left}px)`;
+    // The capsule reaches past the link on both sides.
+    thread.style.width = `${link.offsetWidth + 32}px`;
+    thread.style.transform = `translateX(${left - 16}px)`;
     thread.classList.add("on");
   }, []);
 
@@ -160,7 +161,7 @@ export default function Header() {
           search sits inside it) held a little clear of the page's edges. The
           header itself ignores clicks so the page around the pill stays usable. */}
       <nav
-        className={`sutra-floatnav pointer-events-auto mx-auto flex max-w-[86rem] 2xl:max-w-[98rem] flex-wrap items-center justify-between gap-x-4 rounded-[24px] border border-accent-light/55 bg-cream/70 px-4 py-1 backdrop-blur-xl transition-shadow sm:px-6 md:flex-nowrap md:rounded-full lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 lg:max-xl:grid-cols-[auto_auto_1fr] ${
+        className={`sutra-floatnav sutra-glass pointer-events-auto mx-auto flex max-w-[86rem] 2xl:max-w-[98rem] flex-wrap items-center justify-between gap-x-4 rounded-[24px] border border-accent-light/55 bg-cream/70 px-4 py-1 backdrop-blur-xl transition-shadow sm:px-6 md:flex-nowrap md:rounded-full lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 lg:max-xl:grid-cols-[auto_auto_1fr] ${
           scrolled
             ? "shadow-[0_0_0_1px_rgb(212_175_55/0.12),0_14px_38px_-10px_rgb(212_175_55/0.32)]"
             : "shadow-[0_0_0_1px_rgb(212_175_55/0.12),0_10px_34px_-10px_rgb(212_175_55/0.28)]"
@@ -173,6 +174,9 @@ export default function Header() {
 
           <ul
             ref={navRef}
+            // The capsule follows the pointer, then glides back to the open page.
+            onMouseLeave={() => positionThread(activeIndex)}
+            onBlur={() => positionThread(activeIndex)}
             className="relative order-3 flex w-full items-center justify-center gap-10 whitespace-nowrap border-t border-white/[0.07] pb-2.5 pt-2 md:order-none md:w-auto md:justify-start md:gap-5 md:border-0 md:p-0 lg:gap-7 max-md:hidden"
           >
             <span ref={threadRef} className="sutra-navthread" aria-hidden="true" />
@@ -197,8 +201,8 @@ export default function Header() {
                       }
                     : {})}
                   style={{ "--nav-delay": `${0.05 * i}s` } as React.CSSProperties}
-                  className={`sutra-navin relative text-sm font-medium transition-colors hover:text-primary ${
-                    i === activeIndex ? "text-primary" : "text-foreground/80"
+                  className={`sutra-navin relative z-[1] text-sm font-medium transition-colors ${
+                    i === activeIndex ? "text-white" : "text-foreground/80 hover:text-white"
                   }`}
                 >
                   {link.label}
