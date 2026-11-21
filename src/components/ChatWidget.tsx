@@ -37,6 +37,24 @@ const TOOL_LABELS: Record<string, string> = {
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
+  // Phones: the button steps out of the way while the page is scrolling, so
+  // it never sits on the cards being read, and comes back once it settles.
+  const [scrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    const phone = window.matchMedia("(max-width: 767.98px)");
+    let timer = 0;
+    const onScroll = () => {
+      if (!phone.matches) return;
+      setScrolling(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setScrolling(false), 700);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timer);
+    };
+  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -194,7 +212,9 @@ export default function ChatWidget() {
         <button
           onClick={() => setOpen(true)}
           aria-label="Open Sutra Help"
-          className="fixed bottom-7 right-3 z-40 flex h-12 w-12 max-md:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-md:h-11 max-md:w-11 items-center justify-center rounded-full border border-accent-light/50 bg-primary-dark text-accent-light shadow-[0_14px_30px_-10px_rgba(0,0,0,0.6)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-10px_rgba(0,0,0,0.66)]"
+          className={`fixed bottom-7 right-3 z-40 flex h-12 w-12 max-md:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-md:h-11 max-md:w-11 items-center justify-center rounded-full border border-accent-light/50 bg-primary-dark text-accent-light shadow-[0_14px_30px_-10px_rgba(0,0,0,0.6)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-10px_rgba(0,0,0,0.66)] ${
+            scrolling ? "pointer-events-none translate-x-[140%] opacity-0" : ""
+          }`}
         >
           <MessageCircle size={21} />
         </button>

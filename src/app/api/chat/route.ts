@@ -4,11 +4,11 @@ import { runTool, toolDefinitions } from "@/lib/chat/tools";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-// Flash first for the best answers at chat speed. Free-tier quotas on Flash are
-// small (and Pro has none), so when a model is out of quota (429) or
-// overloaded (503) the next one is tried at once; the flash-lite fallbacks have
-// the most generous limits.
-const MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+// Flash-lite first: it starts answering in about half a second, while Flash on
+// the free tier is often overloaded and either says so after ~4s (503) or
+// never answers at all. When a model is out of quota (429), overloaded (503)
+// or slow to start (ATTEMPT_MS), the next one is tried at once.
+const MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
 const endpoint = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`;
 
@@ -22,6 +22,9 @@ const RETRYABLE = new Set([429, 500, 503, 504]);
  * spinning forever. Aborting first means the catch below still gets to speak.
  */
 const DEADLINE_MS = 25_000;
+
+/** How long one model gets to start answering before the next one is tried. */
+const ATTEMPT_MS = 6_000;
 
 const MAX_TOOL_ROUNDS = 4;
 const MAX_TURNS = 20;
@@ -214,13 +217,28 @@ export async function POST(req: Request) {
             // Everything busy at once is usually a brief spike: wait a moment, then one more pass.
             if (pass > 0) await new Promise((r) => setTimeout(r, 1000));
             for (const candidate of order) {
+              if (abort.signal.aborted) break;
               const started = Date.now();
-              res = await fetch(`${endpoint(candidate)}&key=${encodeURIComponent(apiKey)}`, {
-                method: "POST",
-                signal: abort.signal,
-                headers: { "Content-Type": "application/json" },
-                body: request,
-              });
+              // A model that hangs without answering used to hold the whole
+              // chat until the 25s deadline. Each one now gets ATTEMPT_MS to
+              // start; the stream itself only answers to the overall deadline.
+              const attempt = new AbortController();
+              const slow = setTimeout(() => attempt.abort(), ATTEMPT_MS);
+              try {
+                res = await fetch(`${endpoint(candidate)}&key=${encodeURIComponent(apiKey)}`, {
+                  method: "POST",
+                  signal: AbortSignal.any([abort.signal, attempt.signal]),
+                  headers: { "Content-Type": "application/json" },
+                  body: request,
+                });
+              } catch (err) {
+                if (abort.signal.aborted || !attempt.signal.aborted) throw err;
+                attempts.push(`${candidate} no answer in ${ATTEMPT_MS}ms`);
+                res = undefined;
+                continue;
+              } finally {
+                clearTimeout(slow);
+              }
               if (res.ok && res.body) {
                 attempts.push(`${candidate} ok ${Date.now() - started}ms`);
                 chosen = candidate;

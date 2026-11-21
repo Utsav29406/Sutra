@@ -74,13 +74,24 @@
    soft already) and other blurs are off. The navbar and tab bar are solid
    "liquid glass" (.sutra-glass in globals.css), never frosted. */
 @media (max-width: 767.98px) {
+  /* Without the blur, the three blooms showed their hard edges as a cross of
+     gold. Phones draw one soft round pool instead, matching the blurred one
+     on desktop, still with no filter. */
   .sutra-glow {
     filter: none;
     animation: none;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      rgb(var(--color-accent-light) / 0.3),
+      rgb(var(--color-accent-light) / 0.2) 32%,
+      rgb(var(--color-accent) / 0.09) 60%,
+      rgb(var(--color-accent) / 0.03) 82%,
+      transparent
+    );
   }
   .sutra-bloom {
-    animation: none;
-    will-change: auto;
+    display: none;
   }
   .backdrop-blur-sm,
   .backdrop-blur-xl,

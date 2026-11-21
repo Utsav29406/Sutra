@@ -44,8 +44,14 @@ export default function SiteBackdrop() {
     };
     if (phone) window.addEventListener("scroll", onScroll, { passive: true });
 
+    let sizedWidth = 0;
     function resize() {
       if (!canvas) return;
+      // Phones fire resize when the address bar slides in or out while
+      // scrolling; redrawing then made the sky flash. Only a change of width
+      // (a turned phone) resizes the canvas there.
+      if (phone && sizedWidth === window.innerWidth) return;
+      sizedWidth = window.innerWidth;
       const { width, height } = canvas.getBoundingClientRect();
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -178,7 +184,7 @@ export default function SiteBackdrop() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[100lvh] overflow-hidden"
       style={{ background: "#1a1416" }}
       aria-hidden="true"
     >
